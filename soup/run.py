@@ -143,6 +143,49 @@ class Soup:
         return dt
 
 
+def truncate_logs(out, start_epoch):
+    """Drop every logged row past ``start_epoch``; return the kymo and the
+    last surviving row.
+
+    Background work in this environment does not always survive an idle
+    period, so a run has to be resumable from its last tape dump without
+    leaving a torn or duplicated log behind.  The row *at* the resume point
+    is kept, because it carries the counters for the epochs that led up to
+    it; the resumed run therefore does not re-measure that epoch, and picks
+    up its A(t) from the tracker state saved beside the dump.
+    """
+    csv_path = os.path.join(out, "metrics.csv")
+    if not os.path.exists(csv_path):
+        return [], None
+    with open(csv_path) as fh:
+        kept = [r for r in csv.DictReader(fh)
+                if int(r["epoch"]) <= start_epoch]
+    with open(csv_path, "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=CSV_FIELDS)
+        w.writeheader()
+        for r in kept:
+            w.writerow(r)
+
+    pat_path = os.path.join(out, "patterns.log")
+    if os.path.exists(pat_path):
+        with open(pat_path) as fh:
+            lines, keep, blocks = fh.readlines(), True, []
+        for line in lines:
+            if line.startswith("# epoch "):
+                keep = int(line.split()[2]) <= start_epoch
+            if keep:
+                blocks.append(line)
+        with open(pat_path, "w") as fh:
+            fh.writelines(blocks)
+
+    kymo_path = os.path.join(out, "kymograph.npy")
+    kymo = []
+    if os.path.exists(kymo_path):
+        old = np.load(kymo_path)
+        kymo = [row.copy() for row in old[: len(kept)]]
+    return kymo, (kept[-1] if kept else None)
+
+
 def measure(soup, trackers):
     """One metrics row.  Consumes and resets the interpreter counters."""
     cfg = soup.cfg
@@ -219,11 +262,21 @@ def main(argv=None):
         metrics.PersistenceTracker(cfg.c_min, cfg.tau_epochs, 0.0,
                                    cfg.window_size),
     )
-    kymo = []
     kymo_path = os.path.join(out, "kymograph.npy")
-
     csv_path = os.path.join(out, "metrics.csv")
     pat_path = os.path.join(out, "patterns.log")
+
+    resuming = bool(cfg.load) and os.path.exists(csv_path)
+    kymo, last_row = truncate_logs(out, cfg.start_epoch) if resuming else ([], None)
+    tracker_path = os.path.join(out, "snapshots",
+                                "trackers_%08d.npz" % cfg.start_epoch)
+    # only a resume that lands exactly on a logged dump can carry on the log;
+    # anything else re-measures the starting condition and starts A(t) again
+    continuing = (resuming and last_row is not None
+                  and int(last_row["epoch"]) == cfg.start_epoch
+                  and os.path.exists(tracker_path))
+    if continuing:
+        metrics.load_trackers(tracker_path, trackers)
     t_start = time.perf_counter()
 
     def dump_tape():
@@ -232,10 +285,15 @@ def main(argv=None):
         if soup.labels.size:
             np.save(os.path.join(out, "snapshots",
                                  "labels_%08d.npy" % soup.epoch), soup.labels)
+        metrics.save_trackers(
+            os.path.join(out, "snapshots", "trackers_%08d.npz" % soup.epoch),
+            trackers)
 
-    with open(csv_path, "w", newline="") as cfh, open(pat_path, "w") as pfh:
+    with open(csv_path, "a" if resuming else "w", newline="") as cfh, \
+            open(pat_path, "a" if resuming else "w") as pfh:
         writer = csv.DictWriter(cfh, fieldnames=CSV_FIELDS)
-        writer.writeheader()
+        if not resuming:
+            writer.writeheader()
 
         def snapshot():
             row, top = measure(soup, trackers)
@@ -257,8 +315,11 @@ def main(argv=None):
                                      row["A_t"], row["sim_s"]), flush=True)
             return row
 
-        base = snapshot()["high_order_entropy"]   # the starting condition
-        dump_tape()
+        if continuing:
+            base = float(last_row["high_order_entropy"])
+        else:
+            base = snapshot()["high_order_entropy"]   # the starting condition
+            dump_tape()
         streak, stop_at, detected = 0, cfg.start_epoch + cfg.epochs, False
         while soup.epoch < stop_at:
             n = min(cfg.snapshot_interval, stop_at - soup.epoch)

@@ -139,9 +139,14 @@ def test_end_to_end_run_writes_every_output(tmp_path):
     kymo = np.load(os.path.join(out, "kymograph.npy"))
     assert kymo.shape == (5, 256)
 
-    snaps = sorted(os.listdir(os.path.join(out, "snapshots")))
+    saved = sorted(os.listdir(os.path.join(out, "snapshots")))
+    snaps = [f for f in saved if f.endswith(".npy")]
     assert snaps == ["epoch_00000000.npy", "epoch_00000010.npy",
                      "epoch_00000020.npy"]
+    # A(t) state is saved beside every tape dump so a resume can reload it
+    assert [f for f in saved if f.endswith(".npz")] == [
+        "trackers_00000000.npz", "trackers_00000010.npz",
+        "trackers_00000020.npz"]
     assert np.load(os.path.join(out, "snapshots", snaps[0])).shape == (2048,)
 
     cfg = json.load(open(os.path.join(out, "config.json")))

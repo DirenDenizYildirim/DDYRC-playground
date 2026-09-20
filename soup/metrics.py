@@ -219,3 +219,29 @@ class PersistenceTracker:
     @property
     def a_t(self):
         return int(self.ever.size)
+
+    def state(self):
+        return {"keys": self._keys, "since": self._since, "ever": self.ever}
+
+    def load_state(self, d):
+        self._keys = np.asarray(d["keys"], dtype=np.uint64)
+        self._since = np.asarray(d["since"], dtype=np.int64)
+        self.ever = np.asarray(d["ever"], dtype=np.uint64)
+        return self
+
+
+def save_trackers(path, trackers):
+    """A(t) lives in memory, so a run that is resumed has to reload it."""
+    out = {}
+    for i, t in enumerate(trackers):
+        for key, arr in t.state().items():
+            out["%d_%s" % (i, key)] = arr
+    np.savez(path, **out)
+
+
+def load_trackers(path, trackers):
+    with np.load(path) as d:
+        for i, t in enumerate(trackers):
+            t.load_state({k: d["%d_%s" % (i, k)]
+                          for k in ("keys", "since", "ever")})
+    return trackers

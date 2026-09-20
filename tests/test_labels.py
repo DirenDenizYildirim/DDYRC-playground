@@ -1,4 +1,5 @@
 """Provenance labels must be invisible to the machine, and resume must be exact."""
+import os
 import numpy as np
 import pytest
 
@@ -132,3 +133,61 @@ def test_missing_checkpoint_is_rejected():
     from soup.config import validate
     with pytest.raises(SystemExit):
         validate(Config(load="/no/such/file.npy"))
+
+
+def read_rows(path):
+    import csv
+    with open(path) as fh:
+        rows = list(csv.DictReader(fh))
+    for r in rows:                      # wall-clock is not a property of a run
+        r.pop("wall_s", None)
+        r.pop("sim_s", None)
+    return rows
+
+
+def test_an_interrupted_run_resumes_into_the_same_log(tmp_path):
+    """Kill a run at a tape dump, resume from it, get the same metrics.csv.
+
+    Background work in this environment does not always survive an idle
+    period, so the resume has to reproduce the log exactly -- including
+    A(t), whose tracker state is saved beside each dump.
+    """
+    from soup.run import main
+
+    common = ["--mode", "bff", "--compat", "cubff", "--N", "256", "--k", "8192",
+              "--mu", str(CUBFF_MU), "--seed", "11", "--snapshot-interval", "5",
+              "--tape-dump-interval", "10", "--tau-epochs", "10",
+              "--kymo-width", "64", "--quiet"]
+    straight = str(tmp_path / "straight")
+    main(common + ["--out", straight, "--epochs", "30"])
+
+    torn = str(tmp_path / "torn")
+    main(common + ["--out", torn, "--epochs", "20"])
+    main(common + ["--out", torn, "--epochs", "10", "--start-epoch", "20",
+                   "--load", os.path.join(torn, "snapshots",
+                                          "epoch_00000020.npy")])
+
+    want = read_rows(os.path.join(straight, "metrics.csv"))
+    got = read_rows(os.path.join(torn, "metrics.csv"))
+    assert [r["epoch"] for r in got] == [r["epoch"] for r in want]
+    assert got == want
+    assert np.array_equal(np.load(os.path.join(straight, "kymograph.npy")),
+                          np.load(os.path.join(torn, "kymograph.npy")))
+    assert (open(os.path.join(straight, "patterns.log")).read()
+            == open(os.path.join(torn, "patterns.log")).read())
+
+
+def test_resuming_past_a_dump_drops_the_rows_it_replaces(tmp_path):
+    """A run torn between dumps rewinds to the dump, it does not duplicate."""
+    from soup.run import main
+
+    common = ["--mode", "bff", "--compat", "cubff", "--N", "256", "--k", "8192",
+              "--mu", str(CUBFF_MU), "--seed", "11", "--snapshot-interval", "5",
+              "--tape-dump-interval", "10", "--kymo-width", "64", "--quiet"]
+    out = str(tmp_path / "run")
+    main(common + ["--out", out, "--epochs", "25"])     # dumps at 0, 10, 20, 25
+    main(common + ["--out", out, "--epochs", "10", "--start-epoch", "10",
+                   "--load", os.path.join(out, "snapshots",
+                                          "epoch_00000010.npy")])
+    epochs = [r["epoch"] for r in read_rows(os.path.join(out, "metrics.csv"))]
+    assert epochs == ["0", "5", "10", "15", "20"]
