@@ -1483,3 +1483,91 @@
        869  ....,_...[>}g*w.  8cd3b3fd2c5f87c5985b3e7d672a77a0
        868  .,~....Fb`F..[>}  802c7ec1c3dea446626046dcad5b3e7d
        867  @.,~....Fb`F..[>  40802c7ec1c3dea446626046dcad5b3e
+# epoch 39250  H=7.5631 C=1.2230 HO=7.0549  A(t)=56056
+      1100  w.[>}..9K.,_i..]  77b25b3e7db1d8394b8e2c5f6903135d
+      1092  .Aw.[>}..9K.,_i.  eb4177b25b3e7db1d8394b8e2c5f6903
+      1056  .[>}..9K.,_i..]-  b25b3e7db1d8394b8e2c5f6903135d2d
+      1044  Aw.[>}..9K.,_i..  4177b25b3e7db1d8394b8e2c5f690313
+      1036  H.Aw.[>}..9K.,_i  48eb4177b25b3e7db1d8394b8e2c5f69
+      1004  >}..9K.,_i..]-R.  3e7db1d8394b8e2c5f6903135d2d5290
+       996  [>}..9K.,_i..]-R  5b3e7db1d8394b8e2c5f6903135d2d52
+       992  }..9K.,_i..]-R..  7db1d8394b8e2c5f6903135d2d5290e2
+       926  .,~....Fb`F..[>}  802c7ec1c3dea446626046dcad5b3e7d
+       908  @.,~....Fb`F..[>  40802c7ec1c3dea446626046dcad5b3e
+# epoch 39500  H=7.5752 C=1.2223 HO=7.0628  A(t)=56495
+      1562  .).L.|.:.X7[H.>}  8029a74c9e7cb33af258375b48c83e7d
+      1536  ..).L.|.:.X7[H.>  a08029a74c9e7cb33af258375b48c83e
+      1330  ).L.|.:.X7[H.>}.  29a74c9e7cb33af258375b48c83e7d05
+      1281  [>}..9K.,_i..]-R  5b3e7db1d8394b8e2c5f6903135d2d52
+      1238  >}..9K.,_i..]-R.  3e7db1d8394b8e2c5f6903135d2d5290
+      1118  }..9K.,_i..]-R..  7db1d8394b8e2c5f6903135d2d5290e2
+       999  }..3.U,..pz].)..  7d05d433a0552c94b1707a5d0c29ddf0
+       999  >}..3.U,..pz].).  3e7d05d433a0552c94b1707a5d0c29dd
+       977  .:.ZF._.H.Awy[>}  803ab65a46c720b848eb4177795b3e7d
+       974  ,..pz].)....).L.  2c94b1707a5d0c29ddf0a08029a74c9e
+# epoch 39750  H=7.5475 C=1.1814 HO=7.0421  A(t)=56863
+      1061  X7[H[>}8.W.U,%.p  58375b485b3e7d38ad57a0552c258c70
+      1033  .X7[H[>}8.W.U,%.  f258375b485b3e7d38ad57a0552c258c
+      1021  :.X7[H[>}8.W.U,%  3af258375b485b3e7d38ad57a0552c25
+      1005  .:.X7[H[>}8.W.U,  b33af258375b485b3e7d38ad57a0552c
+       993  r.:.X7[H[>}8.W.U  72b33af258375b485b3e7d38ad57a055
+       977  [H[>}8.W.U,%.p.]  5b485b3e7d38ad57a0552c258c701b5d
+       977  7[H[>}8.W.U,%.p.  375b485b3e7d38ad57a0552c258c701b
+       897  >}..3.U,..pz].).  3e7d050b33a0552c94b1707a5d0c29dd
+       893  }..3.U,..pz].)..  7d050b33a0552c94b1707a5d0c29ddf0
+       881  .>}..3.U,..pz].)  c83e7d050b33a0552c94b1707a5d0c29
+# epoch 40000  H=7.5298 C=1.1496 HO=7.0245  A(t)=57232
+      1954  :H....[>}...K.,.  3a48dc8c0bb25b3e7db1e6ab4b8e2c81
+      1946  _:H....[>}...K.,  203a48dc8c0bb25b3e7db1e6ab4b8e2c
+      1922  ._:H....[>}...K.  c7203a48dc8c0bb25b3e7db1e6ab4b8e
+      1238  ~._:H....[>}...K  7ec7203a48dc8c0bb25b3e7db1e6ab4b
+      1154  .~._:H....[>}...  e07ec7203a48dc8c0bb25b3e7db1e6ab
+      1054  ..[>}...K.,....]  0bb25b3e7db1e6ab4b8e2c81fff0135d
+      1050  H....[>}...K.,..  48dc8c0bb25b3e7db1e6ab4b8e2c81ff
+      1042  .[>}...K.,....]-  b25b3e7db1e6ab4b8e2c81fff0135d2d
+      1026  ....[>}...K.,...  dc8c0bb25b3e7db1e6ab4b8e2c81fff0
+      1026  ...[>}...K.,....  8c0bb25b3e7db1e6ab4b8e2c81fff013
+# epoch 40250  H=7.5592 C=1.1554 HO=7.0631  A(t)=57638
+      1129  8H[>}8.Wl.,..p.]  38485b3e7d38ad576cc12c948c701b5d
+      1101  H[>}8.Wl.,..p.].  485b3e7d38ad576cc12c948c701b5d0c
+      1097  [>}8.Wl.,..p.]..  5b3e7d38ad576cc12c948c701b5d0c8c
+       916  .[>}g*w..,.,..]I  985b3e7d672a77a00b2cfd2c83ce5d49
+       849  X78H[>}8.Wl.,..p  583738485b3e7d38ad576cc12c948c70
+       845  78H[>}8.Wl.,..p.  3738485b3e7d38ad576cc12c948c701b
+       826  ..[>}g*w..,.,..]  c5985b3e7d672a77a00b2cfd2c83ce5d
+       826  ...[>}g*w..,.,..  1fc5985b3e7d672a77a00b2cfd2c83ce
+       818  _...[>}g*w..,.,.  5f1fc5985b3e7d672a77a00b2cfd2c83
+       809  ....o..Gy._...[>  a080e6156f8cd34779045f1fc5985b3e
+# epoch 40500  H=7.5636 C=1.2012 HO=7.0650  A(t)=58092
+      1213  ..[>}g*w..,.,..]  c5985b3e7d672a77a00b2cfd2c83ce5d
+      1213  ...[>}g*w..,.,..  1fc5985b3e7d672a77a00b2cfd2c83ce
+       913  .[>}g*w..,.,..]I  985b3e7d672a77a00b2cfd2c83ce5d49
+       913  [>}g*w..,.,..]I:  5b3e7d672a77a00b2cfd2c83ce5d493a
+       902  ....[>}...y.,..(  d0099cfd5b3e7d9dec9f79e02ceb2e28
+       901  tM....[>}...y.,.  744dd0099cfd5b3e7d9dec9f79e02ceb
+       895  M....[>}...y.,..  4dd0099cfd5b3e7d9dec9f79e02ceb2e
+       895  .tM....[>}...y.,  0c744dd0099cfd5b3e7d9dec9f79e02c
+       884  ...[>}...y.,..(y  099cfd5b3e7d9dec9f79e02ceb2e2879
+       881  ..[>}...y.,..(y]  9cfd5b3e7d9dec9f79e02ceb2e28795d
+# epoch 40750  H=7.5386 C=1.1654 HO=7.0374  A(t)=58489
+      1517  ..[>}g*w..,.,..]  c5985b3e7d672a77a00b2cfd2c83ce5d
+      1517  Z...[>}g*w..,.,.  5a1fc5985b3e7d672a77a00b2cfd2c83
+      1493  ...[>}g*w..,.,..  1fc5985b3e7d672a77a00b2cfd2c83ce
+      1333  y.Z...[>}g*w..,.  79cd5a1fc5985b3e7d672a77a00b2cfd
+      1309  .Z...[>}g*w..,.,  cd5a1fc5985b3e7d672a77a00b2cfd2c
+      1188  .[>}g*w..,.,..]I  985b3e7d672a77a00b2cfd2c83ce5d49
+      1177  8H[>}8.Wl.,..p.]  38485b3e7d38ad576cc12c948c701b5d
+      1132  [>}g*w..,.,..]I:  5b3e7d672a77a00b2cfd2c83ce5d493a
+      1092  }g*w..,.,..]I:..  7d672a77a00b2cfd2c83ce5d493a80d2
+      1092  >}g*w..,.,..]I:.  3e7d672a77a00b2cfd2c83ce5d493a80
+# epoch 41000  H=7.5047 C=1.1576 HO=6.9924  A(t)=58953
+      1304  .......l..Ro.[>}  80aeeddff0f9dc6c01f0526fcc5b3e7d
+      1304  _.......l..Ro.[>  2080aeeddff0f9dc6c01f0526fcc5b3e
+      1292  ......l..Ro.[>}.  aeeddff0f9dc6c01f0526fcc5b3e7dc4
+      1197  .l..Ro.[>}....f.  dc6c01f0526fcc5b3e7dc4efcbf1660a
+      1191  .....l..Ro.[>}..  eddff0f9dc6c01f0526fcc5b3e7dc4ef
+      1173  ..l..Ro.[>}....f  f9dc6c01f0526fcc5b3e7dc4efcbf166
+      1149  l..Ro.[>}....f.a  6c01f0526fcc5b3e7dc4efcbf1660a61
+      1149  ..Ro.[>}....f.a,  01f0526fcc5b3e7dc4efcbf1660a612c
+      1117  ...l..Ro.[>}....  f0f9dc6c01f0526fcc5b3e7dc4efcbf1
+       947  "[>}d.1..,g..E]T  225b3e7d64df31fc9c2c6718ec455d54
