@@ -85,3 +85,42 @@ def test_a_run_of_brackets_is_not_code():
     assert analyze.looks_like_code([b"[" * 16]) is False
     assert analyze.looks_like_code([b"[.>}]" + b"\x01\x02\x03"]) is True
     assert analyze.looks_like_code([b"abcdefgh"]) is False
+
+
+# --- the transition-rate report ---------------------------------------------
+
+def test_wilson_interval_brackets_the_estimate():
+    p, lo, hi = analyze.wilson(3, 10)
+    assert abs(p - 0.3) < 1e-12
+    assert lo < 0.3 < hi
+    assert 0.0 <= lo and hi <= 1.0
+
+
+def test_wilson_has_width_at_the_extremes():
+    """The normal approximation gives a zero-width interval at 0/n and n/n."""
+    _, lo, hi = analyze.wilson(0, 8)
+    assert lo == 0.0 and 0.0 < hi < 0.5
+    _, lo, hi = analyze.wilson(8, 8)
+    assert hi == 1.0 and 0.5 < lo < 1.0
+
+
+def test_wilson_narrows_with_more_trials():
+    _, lo1, hi1 = analyze.wilson(5, 10)
+    _, lo2, hi2 = analyze.wilson(50, 100)
+    assert (hi2 - lo2) < (hi1 - lo1)
+
+
+def test_rate_report_groups_by_configuration():
+    rows = [{"mode": "bff", "compat": "cubff", "N_or_M": 32768,
+             "klass": "program", "takeover_epoch": 2000},
+            {"mode": "bff", "compat": "cubff", "N_or_M": 32768,
+             "klass": "program", "takeover_epoch": 2750},
+            {"mode": "bff", "compat": "none", "N_or_M": 32768,
+             "klass": "random", "takeover_epoch": None}]
+    out = analyze.rate_report(rows)
+    assert len(out) == 2
+    heads = [g for g in out if g["compat"] == "cubff"][0]
+    assert heads["n"] == 2 and heads["programs"] == 2 and heads["rate"] == 1.0
+    assert heads["takeover_epochs"] == [2000, 2750]
+    plain = [g for g in out if g["compat"] == "none"][0]
+    assert plain["programs"] == 0 and plain["ci_high"] < 1.0

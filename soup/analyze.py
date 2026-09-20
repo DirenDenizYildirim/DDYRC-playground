@@ -231,14 +231,63 @@ def table(rows):
     return "\n".join([head, rule] + body)
 
 
+def wilson(k, n, z=1.96):
+    """95% Wilson score interval for a binomial proportion.
+
+    Wilson rather than the normal approximation because the counts here are
+    small and the proportion can sit at 0 or 1, where the normal interval has
+    zero width and is simply wrong.
+    """
+    if n == 0:
+        return 0.0, 0.0, 0.0
+    p = k / n
+    d = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / d
+    half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return p, max(0.0, centre - half), min(1.0, centre + half)
+
+
+def rate_report(rows):
+    """Transition rate per configuration, with a confidence interval."""
+    groups = {}
+    for r in rows:
+        key = (r["mode"], r.get("compat", "none"), r["N_or_M"])
+        groups.setdefault(key, []).append(r)
+    out = []
+    for key, rs in sorted(groups.items()):
+        k = sum(1 for r in rs if r["klass"] == "program")
+        p, lo, hi = wilson(k, len(rs))
+        epochs = sorted(r["takeover_epoch"] for r in rs
+                        if r["takeover_epoch"] is not None)
+        out.append({"mode": key[0], "compat": key[1], "size": key[2],
+                    "n": len(rs), "programs": k,
+                    "rate": round(p, 3), "ci_low": round(lo, 3),
+                    "ci_high": round(hi, 3),
+                    "takeover_epochs": epochs})
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="+")
     ap.add_argument("--json")
+    ap.add_argument("--rates", action="store_true",
+                    help="also report the program-class rate per configuration")
     args = ap.parse_args(argv)
     rows = [analyse(d) for d in args.runs]
     print(table(rows))
     print()
+    if args.rates:
+        print("| configuration | n | program | rate | 95% CI (Wilson) | takeover epochs |")
+        print("|---|---|---|---|---|---|")
+        for g in rate_report(rows):
+            print("| %s%s N=%s | %d | %d | %.2f | %.2f-%.2f | %s |"
+                  % (g["mode"],
+                     "" if g["compat"] == "none" else " (%s)" % g["compat"],
+                     g["size"], g["n"], g["programs"], g["rate"],
+                     g["ci_low"], g["ci_high"],
+                     ", ".join(str(e) for e in g["takeover_epochs"]) or "-"))
+        print()
     for r in rows:
         print("### %s  (mode=%s seed=%s size=%s)" % (r["run"], r["mode"],
                                                      r["seed"], r["N_or_M"]))
@@ -250,7 +299,7 @@ def main(argv=None):
     if args.json:
         os.makedirs(os.path.dirname(args.json) or ".", exist_ok=True)
         with open(args.json, "w") as fh:
-            json.dump(rows, fh, indent=2)
+            json.dump({"runs": rows, "rates": rate_report(rows)}, fh, indent=2)
     return 0
 
 

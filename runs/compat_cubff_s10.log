@@ -4,3 +4,13 @@ epoch     500  HO=0.0695  meanSteps=   787.0  copy=0.676  A(t)=0  sim=27.1s
 epoch     750  HO=0.0915  meanSteps=   745.0  copy=0.748  A(t)=0  sim=39.8s
 epoch    1000  HO=0.1086  meanSteps=   767.0  copy=0.780  A(t)=0  sim=52.7s
 epoch    1250  HO=0.1060  meanSteps=   771.4  copy=0.792  A(t)=189  sim=66.3s
+epoch    1500  HO=0.1216  meanSteps=   845.0  copy=0.784  A(t)=210  sim=80.3s
+epoch    1750  HO=0.1207  meanSteps=   900.4  copy=0.764  A(t)=227  sim=95.2s
+epoch    2000  HO=0.1343  meanSteps=   950.7  copy=0.761  A(t)=237  sim=110.4s
+epoch    2250  HO=0.1300  meanSteps=   987.6  copy=0.758  A(t)=256  sim=126.1s
+epoch    2500  HO=0.1293  meanSteps=  1003.8  copy=0.754  A(t)=277  sim=142.8s
+epoch    2750  HO=0.1278  meanSteps=   988.1  copy=0.747  A(t)=285  sim=158.6s
+epoch    3000  HO=0.1262  meanSteps=  1006.3  copy=0.745  A(t)=295  sim=174.6s
+epoch    3250  HO=0.1326  meanSteps=  1075.4  copy=0.741  A(t)=299  sim=195.1s
+epoch    3500  HO=0.1370  meanSteps=  1051.9  copy=0.740  A(t)=303  sim=227.8s
+epoch    3750  HO=0.1292  meanSteps=  1016.2  copy=0.739  A(t)=303  sim=261.5s
