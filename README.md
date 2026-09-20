@@ -40,6 +40,17 @@ python -m soup.run --config configs/bff_compat.json --compat cubff --seed 1 \
 python -m soup.run --config configs/ring.json --seed 1 --no-copy 1 --out runs/nocopy_s1
 python -m soup.run --config configs/ring.json --seed 1 --indel 1   --out runs/indel_s1
 
+# resume a saved soup and carry provenance labels
+python -m soup.run --config configs/plateau.json --seed 12 --labels 1 \
+                   --load runs/compat_cubff_s12/snapshots/epoch_00005500.npy \
+                   --start-epoch 5500 --out runs/plateau_s12
+
+# cubff's head rule applied to the other modes
+python -m soup.run --config configs/blocks_cubffhead.json --d 8 --seed 1 \
+                   --out runs/blocks_ch_d8_s1
+python -m soup.run --config configs/ring_datahead.json --seed 1 \
+                   --out runs/ring_datahead_s1
+
 # every field of the config is also a CLI flag, and CLI wins
 python -m soup.run --config configs/ring.json --seed 2 --epochs 5000 \
                    --mu 0.001 --R 64 --out runs/ring_hot
@@ -53,6 +64,12 @@ python -m soup.analyze runs/ring_s1 runs/ring_s2 runs/ring_s3 --json analysis/ri
 python -m soup.rescore runs/ring_s1       # recompute metrics for an old run
 python -m pytest tests/ -q
 python -m soup.bench                      # measured interpreter throughput
+
+# post-takeover analysis (see "Does anything keep happening?" below)
+python -m soup.assay   --a later.npy --b earlier.npy --out analysis/a_vs_b
+python -m soup.motifs  runs/plateau_s12 --out analysis/motifs/s12
+python -m soup.posthoc runs/plateau_s12 --out analysis/posthoc/s12
+python -m experiments.phase2 --jobs 4     # the whole queue, resumable
 ```
 
 A run is **exactly reproducible from its seed**. The simulator uses its own
@@ -152,6 +169,55 @@ flipped to a uniformly random byte with probability `mu` (default 0.00024, the
 rate used in the reference paper). Sampling is done with geometric gaps rather
 than one variate per byte; `tests/test_rng.py` checks the realised rate.
 
+### Provenance labels
+
+`--labels 1` allocates a second byte array the same shape as memory. `.` and
+`,` copy a byte's label along with the byte; every other instruction, and
+mutation, leave the destination cell's label untouched. **No instruction can
+read a label**, so a labelled run is byte-for-byte the run without labels —
+`tests/test_labels.py` asserts that memory, every counter and the whole metric
+row are identical with labels on and off. Labels start as one lineage id per
+tape (`i % 251`), and are dumped beside every tape dump.
+
+### Resuming
+
+`--load <dump.npy> --start-epoch <n>` starts from a saved soup instead of a
+random initial condition. Under `--compat cubff` the RNG streams are keyed on
+the epoch, so a resume reproduces an uninterrupted run exactly; the test for
+that is in `tests/test_labels.py`.
+
+---
+
+## Does anything keep happening?
+
+Three tools answer that, and all of them work on saved soups rather than on
+a live run.
+
+**`soup.assay` — competition.** Build one population from half of soup A and
+half of soup B, label the halves, and run the normal dynamics at the normal
+mutation rate. The curve is the fraction of memory still carrying A's label.
+A against itself is the neutral control, and its spread across replicates is
+the noise band any real difference has to leave.
+
+**`soup.motifs` — families and sweeps.** The dominant 16-byte windows of a
+taken-over soup are mostly shifts of one string, so counting windows
+overstates how many distinct things are present. Windows within edit distance
+`MAX_DIST` are one family; a family's *coverage* is the fraction of tapes
+carrying it. A **sweep** is a family passing 10% coverage while the family
+that was leading falls below 5%. `MAX_DIST = 8` is set from
+`motifs.null_distances()`: over 2000 pairs drawn from a soup's own byte
+frequencies the smallest distance observed was 12.
+
+**`soup.posthoc` — self-sufficiency and where the variation sits.** A tape
+from the soup is paired with a *fresh uniform-random* tape and run once;
+*colonisation* is the share of the resulting 128 bytes carrying the soup
+tape's label, which is 0.5 when neither side gains. The controls are
+soup-vs-soup and random-vs-random. For the second question, tapes are aligned
+on the leading family's representative window and per-offset byte entropy is
+reported — offsets 0..15 are the seed window, so low entropy there is
+circular and is shown only for completeness; the conserved width *outside*
+that range is the measurement.
+
 ---
 
 ## Metrics
@@ -219,8 +285,15 @@ metrics.csv        one row per snapshot
 patterns.log       top-10 16-byte windows per snapshot
 kymograph.npy      (n_snapshots, kymo_width) uint8 -- a fixed slice of memory over time
 snapshots/         raw memory dumps, epoch_%08d.npy
+                   and labels_%08d.npy when --labels 1
 summary.json       wall-clock, throughput, platform
 ```
+
+`soup.assay` writes `<out>.csv` (one row per replicate and assay epoch) beside
+`<out>.json` with the exact inputs. `soup.motifs` writes family coverage per
+snapshot plus a `.json` listing the sweeps it found. `soup.posthoc` writes one
+row per snapshot plus `_profiles.json` with the per-offset entropy profiles.
+`soup.figures` draws all three.
 
 `python -m soup.plots` turns those into `high_order_entropy.png`, `a_t.png`,
 `mean_steps.png`, `frac_copy_runs.png`, `byte_composition.png` (small multiples
