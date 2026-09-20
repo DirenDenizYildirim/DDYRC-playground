@@ -91,6 +91,61 @@ reading the bff result.
 
 ---
 
+## cubff: every semantic difference, and the one that matters
+
+`--compat cubff` and `--compat cubff_noheads` reproduce
+[cubff](https://github.com/paradigms-of-intelligence/cubff) (commit f212e849,
+built `make CUDA=0`) **bit-exactly**: same SplitMix64 streams for
+initialisation, pairing and mutation, same order of operations. After 129
+epochs on 256 tapes our soup equals a cubff checkpoint byte for byte, for both
+languages and two seeds; `tests/test_compat.py` asserts it against checkpoints
+cubff wrote, committed under `tests/data/`. Longer manual checks match at 513
+epochs on 1024 tapes.
+
+cubff ships two BFF languages. The spec this repository implements — "run from
+IP=0 with head0=head1=0" — is `bff_noheads`. The one cubff *names* `bff`, built
+with `BFF_HEADS` defined, is a different language.
+
+| aspect | this repo's spec | cubff `bff` | cubff `bff_noheads` |
+|---|---|---|---|
+| **initial head0, head1** | **0, 0** | **`tape[0] % 128`, `tape[1] % 128`** | 0, 0 |
+| **initial pc** | **0** | **2** | 0 |
+| head leaving the tape | wraps modulo the region | wraps modulo 128 (mask applied at the top of each step) | same |
+| `[` condition / target | `tape[head0] == 0`; jump to the matching `]`, then +1 | identical | identical |
+| `]` condition / target | `tape[head0] != 0`; jump to the matching `[`, then +1 | identical | identical |
+| unmatched `[` | run ends, the `[` costs one step | pc set past the end, ends the same way, same step count | same |
+| unmatched `]` | run ends, the `]` costs one step | pc set to −1, ends the same way, same step count | same |
+| step budget | `k`, counts no-ops (default 8192) | 8192, counts no-ops | same |
+| "ops" it reports | steps including no-ops (we now also log `ops_per_run`, excluding them) | `i − nskip`: excludes no-ops | same |
+| tape length | 64 | 64 | 64 |
+| default soup size | `N`, our default 1024 | 131072 = 2^17 | same |
+| pairing | Fisher-Yates over all N, adjacent pairs | identity, then a descending Fisher-Yates seeded `SplitMix64(seed(epoch·N+i))`, adjacent pairs | same |
+| mutation timing | after each epoch, over the whole soup | on each pair's 128-byte tape immediately before it runs | same |
+| mutation rate | `mu` per byte per epoch, default 0.00024 | `1<<18` over a `1<<30` denominator = 2^−12 = 0.000244140625 | same |
+| initial bytes | our xorshift64\* stream | `SplitMix64(64·N·seed + 64·i + j) % 256` | same |
+| compression metric | zlib level 9 (now brotli q6, window 2^24) | brotli quality 2, window 2^24 | same |
+
+Everything below the first two rows is either identical or scaffolding that
+does not change the language — different RNG streams, a mutation applied a
+few hundred microseconds earlier, a counter that reports a different thing.
+Our `mu = 0.00024` is cubff's own displayed default, which is 2^−12 rounded;
+the compat configs use the exact value.
+
+**The one behavioural difference is the initial machine state**, and it is
+large. In `bff`, the first two bytes of the concatenated pair *are* the head
+positions, and execution starts at byte 2. A program therefore gets an
+arbitrary head0/head1 offset for free. That offset is precisely what a
+replicator needs and precisely what is expensive to compute: the hand-written
+replicator in this repository spends 20 of its 25 bytes on a counter loop and
+a counter-restoring `++++++++` run whose only job is to put head1 64 cells
+away from head0. Under `bff` that entire apparatus is two data bytes.
+
+Two immediate consequences, both visible in the runs: `bff` executes more —
+1120 mean steps per run against 640 for our spec at the same soup size — and
+its runs write more often.
+
+---
+
 ## bff: no spontaneous takeover in ten runs
 
 | run | N | epochs | interactions | HOE final | HOE max | H final | A(t) | takeover |

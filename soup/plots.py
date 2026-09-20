@@ -235,9 +235,26 @@ def main(argv=None):
                 "%s: high-order entropy" % tag,
                 "bits/byte  (H - zlib)",
                 note="entropy of the byte distribution minus zlib(9) bits per byte")
+    plot_series(runs, os.path.join(args.out, "entropy_bits.png"),
+                "entropy_bits", "%s: order-0 entropy H" % tag,
+                "bits/byte",
+                note="8.0 = uniform random bytes, 0.0 = one byte value")
     plot_series(runs, os.path.join(args.out, "a_t.png"), "A_t",
                 "%s: A(t), cumulative novel persistent 8-byte patterns" % tag,
-                "distinct windows")
+                "distinct windows",
+                note="a window counts only if it also beats an i.i.d. null "
+                     "model of the current byte frequencies by 5x")
+    if "A_t_naive" in runs[0][1]:
+        plot_series(runs, os.path.join(args.out, "a_t_naive.png"), "A_t_naive",
+                    "%s: A(t) without the null filter" % tag,
+                    "distinct windows",
+                    note="count >= c_min only -- the quantity the first "
+                         "version of this metric reported")
+    if "frac_steps_in_loop" in runs[0][1]:
+        plot_series(runs, os.path.join(args.out, "frac_steps_in_loop.png"),
+                    "frac_steps_in_loop",
+                    "%s: fraction of steps spent re-running an instruction" % tag,
+                    "fraction")
     plot_series(runs, os.path.join(args.out, "mean_steps.png"), "mean_steps",
                 "%s: mean steps executed per run" % tag, "steps")
     plot_series(runs, os.path.join(args.out, "frac_copy_runs.png"),

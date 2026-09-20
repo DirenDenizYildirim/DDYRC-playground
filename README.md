@@ -17,7 +17,7 @@ emerges, the results say so.
 ## Install
 
 ```sh
-pip install numpy numba matplotlib      # pytest as well, to run the tests
+pip install numpy numba matplotlib brotli zstandard   # pytest to run the tests
 ```
 
 ## Run
@@ -29,6 +29,17 @@ python -m soup.run --config configs/bff.json  --seed 1 --out runs/bff_s1
 # the actual baseline: one ring of memory, random execution sites
 python -m soup.run --config configs/ring.json --seed 1 --out runs/ring_s1
 
+# bff's pairing with ring locality: blocks pair with near neighbours only
+python -m soup.run --config configs/blocks.json --seed 1 --out runs/blocks_s1
+
+# bit-exact cubff, the implementation the reference paper used
+python -m soup.run --config configs/bff_compat.json --compat cubff --seed 1 \
+                   --out runs/compat_s1
+
+# language variants
+python -m soup.run --config configs/ring.json --seed 1 --no-copy 1 --out runs/nocopy_s1
+python -m soup.run --config configs/ring.json --seed 1 --indel 1   --out runs/indel_s1
+
 # every field of the config is also a CLI flag, and CLI wins
 python -m soup.run --config configs/ring.json --seed 2 --epochs 5000 \
                    --mu 0.001 --R 64 --out runs/ring_hot
@@ -39,6 +50,7 @@ Then:
 ```sh
 python -m soup.plots   runs/ring_s1 runs/ring_s2 runs/ring_s3 --out analysis/ring
 python -m soup.analyze runs/ring_s1 runs/ring_s2 runs/ring_s3 --json analysis/ring.json
+python -m soup.rescore runs/ring_s1       # recompute metrics for an old run
 python -m pytest tests/ -q
 python -m soup.bench                      # measured interpreter throughput
 ```
@@ -89,12 +101,22 @@ same interpreter, and the ring results are the same under either (RESULTS.md).
 
 ### Mode `bff` — validation
 
+
+
 A population of `N` tapes of 64 bytes. Each epoch draws a uniformly random
 perfect matching of the tapes; each pair is concatenated into a 128-byte
 region, run from `ip = head0 = head1 = 0`, and split back into two tapes. This
 is the setup of Agüera y Arcas et al. (2024), *Computational Life*, where
 self-replicators are reported to emerge and take over. It exists here to
 validate the interpreter and the metrics against a known result.
+
+`--compat cubff` and `--compat cubff_noheads` replace our RNG, pairing and
+mutation with [cubff](https://github.com/paradigms-of-intelligence/cubff)'s,
+so a run can be diffed byte-for-byte against a cubff checkpoint — which
+`tests/test_compat.py` does. cubff's `bff_noheads` is the spec above;
+its `bff` starts with `head0 = tape[0] % 128`, `head1 = tape[1] % 128` and
+`pc = 2`, which is a materially different language. RESULTS.md has the full
+difference table.
 
 ### Mode `ring` — the baseline
 
@@ -104,6 +126,24 @@ instruction pointer and both heads confined to the `2R+1` window centred on `p`
 (default `R = 128`). One epoch is `M/64` ticks, run sequentially. The window is
 copied out of the ring, executed, and written back, so a tick sees every
 earlier tick's writes.
+
+### Mode `blocks` — bff's pairing with the ring's locality
+
+A ring of `N` blocks of 64 bytes. A tick picks a random block `i` and a partner
+drawn uniformly from the `2d` blocks within `±d` of it (wrapping, `i` itself
+excluded), concatenates the two in a random order into a 128-byte region, runs
+it bff-style from `ip = head0 = head1 = 0`, and writes both back. One epoch is
+`N/2` ticks. `d` interpolates between bff (`d = N/2`, any partner) and a purely
+local soup (`d = 1`).
+
+### Language variants
+
+`--no-copy 1` turns `.` and `,` into no-ops: they still cost a step and still
+count as instructions, they just move no bytes. `--indel 1` adds insertions and
+deletions to the mutation operator at the same *total* rate as substitution
+(so half that rate each); both shift bytes only within `R` of the site and both
+inject exactly one random byte, so an indel costs the same entropy as a
+substitution and only the reading frame differs.
 
 ### Both modes
 
@@ -121,30 +161,47 @@ memory.
 
 | column | meaning |
 |---|---|
-| `entropy_bits` | Shannon entropy of the byte distribution, bits/byte (8.0 = uniform, 0.0 = one value) |
-| `zlib_bits` | zlib level-9 compressed size, bits/byte |
-| `high_order_entropy` | `entropy_bits - zlib_bits` |
+| `entropy_bits` | order-0 Shannon entropy **H**, bits/byte (8.0 = uniform, 0.0 = one value) |
+| `comp_bits` | compressed size, bits/byte — brotli quality 6, window 2^24 |
+| `high_order_entropy` | `entropy_bits - comp_bits` |
+| `brotli2_bits` | brotli quality 2, the setting cubff reports, for comparability |
+| `zlib_bits`, `hoe_zlib` | zlib level 9, kept so the earlier runs stay comparable |
 | `mean_steps` | mean steps executed per run, since the previous snapshot |
-| `frac_copy_runs` | fraction of runs that executed at least one `.` or `,`, since the previous snapshot |
+| `frac_steps_in_loop` | fraction of steps executed at an instruction pointer the run had already visited — i.e. time spent re-running code |
+| `ops_per_run` | executed instructions per run, excluding no-ops (cubff's "ops") |
+| `frac_copy_runs` | fraction of runs that executed at least one `.` or `,` |
 | `frac_term_*` | how runs ended: budget / off-region / unmatched-bracket |
 | `distinct_windows` | number of distinct 8-byte windows currently in memory |
-| `n_persistent` | 8-byte windows that are persistent *right now* |
-| `A_t` | **A(t)**: distinct 8-byte windows that have *ever* been persistent |
+| `n_persistent`, `A_t` | **A(t)**: windows that are persistent now / have ever been |
+| `n_persistent_naive`, `A_t_naive` | the same without the null filter |
 | `runs`, `steps`, `mutations` | raw counters since the previous snapshot |
 
-**High-order entropy** is the headline. For i.i.d. bytes it is ~0: the order-0
-entropy and the compressed size agree, because there is no structure beyond the
-byte histogram for zlib to find. It rises when the *same substrings* recur, so
-a sharp rise is the signature of a replicator takeover. The planted-replicator
-control in `runs/bff_plant20_s1` takes it from 0.03 to 5.7 bits/byte in under
-30 epochs — that is what a takeover looks like in this metric.
+**High-order entropy** is the headline, and it is never reported alone. For
+i.i.d. bytes it is ~0: the order-0 entropy and the compressed size agree,
+because there is no structure beyond the byte histogram to find. It rises when
+the *same substrings* recur, so a sharp rise is the signature of a replicator
+takeover — the planted-replicator control in `runs/bff_plant20_s1` takes it
+from 0.03 to 5.5 bits/byte in under 30 epochs. But it is *also* ~0 for memory
+that has collapsed to one repeated byte, because H has fallen to meet the
+compressed size, so **H is always logged beside it**: 8.0 means random, ~1.3
+means monoculture, and high-order entropy alone cannot tell them apart.
 
 **A(t)** is a cumulative novelty count. At each snapshot every 8-byte window in
-memory is counted; a window becomes *persistent* once its count has been at
-least `c_min` (default 8) for `tau` (default 5) **consecutive snapshots**. A(t)
-is the number of distinct windows that have ever crossed that bar, so it only
-grows. A soup that keeps inventing new durable patterns has an A(t) that keeps
-climbing; one that has settled has an A(t) that flattens.
+memory is counted. A window *qualifies* when its count is at least `c_min`
+(default 8) **and** at least `null_ratio` (default 5) times the count an
+i.i.d. model with the soup's *current* byte frequencies would predict. It
+becomes *persistent* once it has qualified continuously for `tau_epochs`
+(default 250) **epochs** — epochs, not snapshots, so the logging cadence does
+not change what A(t) counts. A(t) is the number of distinct windows that have
+ever crossed that bar, so it only grows.
+
+Both halves of that definition are load-bearing and both were added after the
+first version misled us. Counting `tau` in snapshots made A(t) depend on the
+logging interval (the same configuration scored 547 at one cadence and 262 at
+another). Omitting the null filter made a soup that is 82% one byte look
+endlessly creative, because a two-letter alphabet has thousands of
+arrangements that clear `c_min` by chance. `A_t_naive` keeps the unfiltered
+count so the two can be compared.
 
 **`patterns.log`** records the ten most frequent 16-byte windows at every
 snapshot, in printable form *and* in hex, so you can read what evolved without
@@ -203,15 +260,24 @@ measured figure is about two and a half minutes.
 - **zlib has a 32 KiB window.** For a 64 KiB ring it cannot exploit
   correlations at range beyond half the memory, so `zlib_bits` is an upper
   bound on the compressed size and `high_order_entropy` a lower bound.
-- **A(t)'s `tau` is counted in snapshots, not epochs.** Runs with different
-  `snapshot_interval` values are not directly comparable on A(t).
 - **A(t) counts 8-byte windows, not organisms.** It cannot distinguish "one
   new 40-byte replicator" from "33 new windows"; a single new structure of
   length L adds up to L+7 to A(t) at once.
-- **One mutation model.** Point substitution only — no insertion, deletion,
-  duplication or recombination, so there is no cheap route to longer patterns.
+- **A(t)'s null filter is i.i.d.** It knows the soup's byte frequencies but
+  not its spatial structure, so a field of clustered `,` runs still scores as
+  novel — correctly, since the clustering *is* non-i.i.d. structure, but it is
+  not a program either.
+- **`frac_steps_in_loop` counts re-executed addresses, not syntactic loops.**
+  That is deliberate — it catches loops built by self-modification, which a
+  bracket-matching definition would miss — but a program that legitimately
+  revisits an address without looping would be counted too.
+- **Mutation is point substitution by default.** `--indel 1` adds insertions
+  and deletions; there is still no duplication or recombination, so there is
+  no cheap route to *longer* patterns.
 - **bff and ring are not directly comparable.** They differ in topology,
   execution-site distribution and locality all at once; the default configs
   only match on total memory size (65536 bytes) and on `k` and `mu`.
+  `--mode blocks` exists to separate those factors: it shares bff's pairing
+  and differs only in locality.
 - **Single-threaded.** Ticks are sequential by definition of the model; runs
   are parallelised across seeds by running separate processes.
