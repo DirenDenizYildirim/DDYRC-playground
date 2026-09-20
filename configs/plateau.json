@@ -6,7 +6,7 @@
   "mu": 0.000244140625,
   "epochs": 50000,
   "snapshot_interval": 250,
-  "tape_dump_interval": 5000,
+  "tape_dump_interval": 1000,
   "stop_after_takeover": 0,
   "labels": 1,
   "window_size": 8,

@@ -23,7 +23,7 @@
   "snapshot_interval": 250,
   "start_epoch": 5500,
   "stop_after_takeover": 0,
-  "tape_dump_interval": 5000,
+  "tape_dump_interval": 1000,
   "tau": 5,
   "tau_epochs": 1000,
   "top_k": 10,
