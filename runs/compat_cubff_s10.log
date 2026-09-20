@@ -14,3 +14,4 @@ epoch    3000  HO=0.1262  meanSteps=  1006.3  copy=0.745  A(t)=295  sim=174.6s
 epoch    3250  HO=0.1326  meanSteps=  1075.4  copy=0.741  A(t)=299  sim=195.1s
 epoch    3500  HO=0.1370  meanSteps=  1051.9  copy=0.740  A(t)=303  sim=227.8s
 epoch    3750  HO=0.1292  meanSteps=  1016.2  copy=0.739  A(t)=303  sim=261.5s
+epoch    4000  HO=0.1300  meanSteps=  1061.4  copy=0.736  A(t)=303  sim=296.0s
