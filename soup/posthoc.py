@@ -234,8 +234,13 @@ def analyse(run_dir, out, samples=SAMPLES, k=8192, seed=0, span=32,
         for i, (epoch, path) in enumerate(motifs.snapshot_paths(run_dir)):
             if i % every:
                 continue
-            row = snapshot_row(np.load(path), epoch, samples, k, seed, span,
-                               profiles, heads_from_tape)
+            # a per-snapshot seed: with one fixed seed every snapshot reuses
+            # the same draw pattern, which held the soup-vs-soup control at a
+            # spuriously steady 0.523 when five other seeds on the same soup
+            # give 0.4985-0.5225.  Varying it makes the across-snapshot spread
+            # an honest error bar instead of hiding it.
+            row = snapshot_row(np.load(path), epoch, samples, k, seed + epoch,
+                               span, profiles, heads_from_tape)
             w.writerow(row)
             fh.flush()
             if not quiet:
