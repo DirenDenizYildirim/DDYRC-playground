@@ -89,42 +89,115 @@ def mk(counts_by_key):
     return keys, counts
 
 
-def test_a_window_needs_tau_consecutive_snapshots_to_become_persistent():
-    t = metrics.PersistenceTracker(c_min=8, tau=3)
-    assert t.update(*mk({1: 10})) == (0, 0)
-    assert t.update(*mk({1: 10})) == (0, 0)
-    assert t.update(*mk({1: 10})) == (1, 1)
+def test_a_window_needs_tau_epochs_to_become_persistent():
+    t = metrics.PersistenceTracker(c_min=8, tau_epochs=30)
+    assert t.update(*mk({1: 10}), 0) == (0, 0)
+    assert t.update(*mk({1: 10}), 20) == (0, 0)
+    assert t.update(*mk({1: 10}), 30) == (1, 1)
 
 
-def test_a_broken_streak_restarts_the_count():
-    t = metrics.PersistenceTracker(c_min=8, tau=3)
-    t.update(*mk({1: 10}))
-    t.update(*mk({1: 10}))
-    t.update(*mk({1: 2}))          # falls below c_min
-    assert t.update(*mk({1: 10})) == (0, 0)
-    t.update(*mk({1: 10}))
-    assert t.update(*mk({1: 10})) == (1, 1)
+def test_tau_is_measured_in_epochs_not_snapshots():
+    """The same history logged at two cadences must give the same A(t)."""
+    coarse = metrics.PersistenceTracker(c_min=8, tau_epochs=100)
+    fine = metrics.PersistenceTracker(c_min=8, tau_epochs=100)
+    for e in (0, 50, 100, 150, 200):
+        coarse.update(*mk({1: 10}), e)
+    for e in range(0, 201, 10):
+        fine.update(*mk({1: 10}), e)
+    assert coarse.a_t == fine.a_t == 1
+
+
+def test_a_broken_streak_restarts_the_clock():
+    t = metrics.PersistenceTracker(c_min=8, tau_epochs=30)
+    t.update(*mk({1: 10}), 0)
+    t.update(*mk({1: 10}), 20)
+    t.update(*mk({1: 2}), 25)          # falls below c_min
+    assert t.update(*mk({1: 10}), 30) == (0, 0)
+    assert t.update(*mk({1: 10}), 55) == (0, 0)
+    assert t.update(*mk({1: 10}), 60) == (1, 1)
 
 
 def test_counts_below_c_min_never_persist():
-    t = metrics.PersistenceTracker(c_min=8, tau=2)
-    for _ in range(10):
-        assert t.update(*mk({1: 7})) == (0, 0)
+    t = metrics.PersistenceTracker(c_min=8, tau_epochs=0)
+    for e in range(10):
+        assert t.update(*mk({1: 7}), e * 10) == (0, 0)
 
 
 def test_a_t_is_cumulative_and_never_decreases():
-    t = metrics.PersistenceTracker(c_min=8, tau=2)
-    t.update(*mk({1: 10}))
-    t.update(*mk({1: 10}))
+    t = metrics.PersistenceTracker(c_min=8, tau_epochs=10)
+    t.update(*mk({1: 10}), 0)
+    t.update(*mk({1: 10}), 10)
     assert t.a_t == 1
-    t.update(*mk({2: 10}))         # window 1 disappears entirely
-    t.update(*mk({2: 10}))
-    assert t.a_t == 2              # cumulative: still counts window 1
-    assert t.update(*mk({}))[1] == 0   # nothing persistent right now
+    t.update(*mk({2: 10}), 20)         # window 1 disappears entirely
+    t.update(*mk({2: 10}), 30)
+    assert t.a_t == 2                  # cumulative: still counts window 1
+    assert t.update(*mk({}), 40)[1] == 0
     assert t.a_t == 2
 
 
 def test_distinct_windows_are_counted_separately():
-    t = metrics.PersistenceTracker(c_min=2, tau=1)
-    a_t, now = t.update(*mk({1: 5, 2: 5, 3: 1}))
+    t = metrics.PersistenceTracker(c_min=2, tau_epochs=0)
+    a_t, now = t.update(*mk({1: 5, 2: 5, 3: 1}), 0)
     assert (a_t, now) == (2, 2)
+
+
+# --- the null filter ---------------------------------------------------------
+
+def test_null_filter_rejects_windows_a_biased_coin_would_produce():
+    """In memory that is 82% one byte, a run of that byte is not a discovery."""
+    mem = np.full(65536, ord("<"), dtype=np.uint8)
+    mem[::9] = ord(",")                      # ~11% commas, i.i.d.-ish
+    keys, counts = metrics.count_windows_u64(mem, 8, wrap=True)
+    freqs = metrics.byte_frequencies(mem)
+    naive = metrics.PersistenceTracker(c_min=8, tau_epochs=0, null_ratio=0.0)
+    filt = metrics.PersistenceTracker(c_min=8, tau_epochs=0, null_ratio=5.0)
+    n_naive = naive.qualifying(keys, counts).size
+    n_filt = filt.qualifying(keys, counts, freqs, mem.size).size
+    assert n_naive > 0
+    assert n_filt < n_naive
+
+
+def test_null_filter_keeps_a_planted_multi_byte_pattern():
+    rng = np.random.default_rng(0)
+    mem = rng.integers(0, 256, 65536, dtype=np.uint8)
+    motif = np.frombuffer(b"[-}}}}]+", dtype=np.uint8)
+    for i in range(0, 65536, 512):           # 128 copies of one 8-byte motif
+        mem[i:i + 8] = motif
+    keys, counts = metrics.count_windows_u64(mem, 8, wrap=True)
+    freqs = metrics.byte_frequencies(mem)
+    filt = metrics.PersistenceTracker(c_min=8, tau_epochs=0, null_ratio=5.0)
+    kept = filt.qualifying(keys, counts, freqs, mem.size)
+    key = metrics.window_keys_u64(motif, 8, False)[0]
+    assert key in kept
+
+
+def test_expected_iid_counts_match_a_hand_computation():
+    freqs = np.zeros(256)
+    freqs[0] = 0.5
+    freqs[1] = 0.5
+    keys = metrics.window_keys_u64(np.zeros(2, dtype=np.uint8), 2, False)[:1]
+    got = metrics.expected_iid_counts(keys, 2, freqs, 1000)
+    assert abs(float(got[0]) - 250.0) < 1e-9
+
+
+# --- compressors -------------------------------------------------------------
+
+def test_every_compressor_agrees_that_random_bytes_are_incompressible():
+    mem = np.random.default_rng(1).integers(0, 256, 65536, dtype=np.uint8)
+    for method in ("brotli6", "brotli2", "zlib", "zstd"):
+        assert abs(metrics.compressed_bits_per_byte(mem, method) - 8.0) < 0.05
+
+
+def test_brotli_sees_repeats_that_zlibs_window_cannot():
+    """A 64 KiB ring with a period longer than zlib's 32 KiB window."""
+    block = np.random.default_rng(2).integers(0, 256, 32768, dtype=np.uint8)
+    mem = np.concatenate([block, block])     # one repeat, 32768 apart
+    assert metrics.compressed_bits_per_byte(mem, "brotli6") < 4.2
+    assert metrics.compressed_bits_per_byte(mem, "zlib") > 7.9
+
+
+def test_high_order_entropy_defaults_to_the_long_window_compressor():
+    mem = np.random.default_rng(3).integers(0, 256, 4096, dtype=np.uint8)
+    h, c, ho = metrics.high_order_entropy(mem)
+    assert abs(c - metrics.compressed_bits_per_byte(mem, "brotli6")) < 1e-12
+    assert abs(ho - (h - c)) < 1e-12

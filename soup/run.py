@@ -13,6 +13,7 @@ import time
 
 import numpy as np
 
+from . import compat as compat_mod
 from . import core, metrics, replicator
 from .analyze import HOE_RISE, SUSTAIN
 from .config import add_cli_args, build_config
@@ -21,11 +22,17 @@ from .rng import fill_random, make_state
 
 CSV_FIELDS = [
     "epoch", "wall_s", "sim_s",
-    "entropy_bits", "zlib_bits", "high_order_entropy",
-    "mean_steps", "frac_copy_runs",
+    # order-0 entropy is always reported beside high-order entropy: on its own
+    # HOE cannot tell a random soup from a one-byte crystal
+    "entropy_bits", "comp_bits", "high_order_entropy",
+    "brotli2_bits", "zlib_bits", "hoe_zlib",
+    # computation
+    "mean_steps", "frac_copy_runs", "frac_steps_in_loop", "ops_per_run",
     "frac_term_budget", "frac_term_off_region", "frac_term_unmatched",
     "runs", "steps", "mutations",
+    # novelty
     "distinct_windows", "n_persistent", "A_t",
+    "n_persistent_naive", "A_t_naive",
 ]
 
 
@@ -37,12 +44,19 @@ class Soup:
         self.state = make_state(cfg.seed)
         if cfg.mode == "ring":
             self.mem = np.zeros(cfg.M, dtype=np.uint8)
-            self.buf = np.zeros(2 * cfg.R + 1, dtype=np.uint8)
         else:
             self.mem = np.zeros((cfg.N, 64), dtype=np.uint8)
-            self.buf = np.zeros(128, dtype=np.uint8)
             self.perm = np.arange(cfg.N, dtype=np.int64)
-        fill_random(self.flat, self.state)
+        self.buf = np.zeros(cfg.region_len, dtype=np.uint8)
+        self.visited = np.zeros(cfg.region_len, dtype=np.int32)
+        self.gen = 0
+        if cfg.compat != "none":
+            self.seed_base = compat_mod.seed_base_for(cfg.seed)
+            compat_mod.cubff_init(
+                self.mem, compat_mod.seed_of(self.seed_base, np.uint64(0)))
+            self.mut_prob = int(round(cfg.mu * compat_mod.CUBFF_MUTATION_DENOM))
+        else:
+            fill_random(self.flat, self.state)
         if cfg.plant:
             self._plant(cfg.plant)
         self.stats = np.zeros(core.N_STATS, dtype=np.int64)
@@ -74,15 +88,29 @@ class Soup:
     def advance(self, n_epochs):
         """Run n_epochs, accumulating stats.  Returns seconds spent simulating."""
         cfg = self.cfg
+        wrap = cfg.head_bound == "wrap"
+        allow_copy = not cfg.no_copy
         t0 = time.perf_counter()
-        if cfg.mode == "ring":
-            m = core.ring_chunk(self.mem, self.buf, n_epochs, cfg.ticks_per_epoch,
-                                cfg.R, cfg.k, cfg.mu, self.state, self.stats,
-                                cfg.head_bound == "wrap")
+        if cfg.compat != "none":
+            m, self.gen = compat_mod.cubff_chunk(
+                self.mem, self.buf, self.perm, self.epoch, n_epochs,
+                self.seed_base, self.mut_prob, cfg.compat == "cubff",
+                cfg.k, self.stats, self.visited, self.gen)
+        elif cfg.mode == "ring":
+            m, self.gen = core.ring_chunk(
+                self.mem, self.buf, n_epochs, cfg.ticks_per_epoch, cfg.R,
+                cfg.k, cfg.mu, self.state, self.stats, self.visited, self.gen,
+                wrap, allow_copy, bool(cfg.indel))
+        elif cfg.mode == "blocks":
+            m, self.gen = core.blocks_chunk(
+                self.mem, self.buf, n_epochs, cfg.ticks_per_epoch, cfg.d,
+                cfg.k, cfg.mu, self.state, self.stats, self.visited, self.gen,
+                wrap, allow_copy)
         else:
-            m = core.bff_chunk(self.mem, self.buf, self.perm, n_epochs,
-                               cfg.k, cfg.mu, self.state, self.stats,
-                               cfg.head_bound == "wrap")
+            m, self.gen = core.bff_chunk(
+                self.mem, self.buf, self.perm, n_epochs, cfg.k, cfg.mu,
+                self.state, self.stats, self.visited, self.gen, wrap,
+                allow_copy)
         dt = time.perf_counter() - t0
         self.sim_s += dt
         self.mutations += int(m)
@@ -90,31 +118,46 @@ class Soup:
         return dt
 
 
-def measure(soup, tracker):
+def measure(soup, trackers):
     """One metrics row.  Consumes and resets the interpreter counters."""
     cfg = soup.cfg
     flat = soup.flat
-    h, c, ho = metrics.high_order_entropy(flat, cfg.zlib_level)
+    h = metrics.shannon_entropy_bits(flat)
+    c = metrics.compressed_bits_per_byte(flat, cfg.compressor)
+    c2 = metrics.compressed_bits_per_byte(flat, "brotli2")
+    cz = metrics.compressed_bits_per_byte(flat, "zlib", cfg.zlib_level)
     wrap = cfg.mode == "ring"
     tape_len = None if wrap else 64
     keys, counts = metrics.count_windows_u64(flat, cfg.window_size, wrap, tape_len)
-    a_t, n_pers = tracker.update(keys, counts)
+    freqs = metrics.byte_frequencies(flat)
+    n_windows = int(counts.sum())
+    tracker, tracker_naive = trackers
+    a_t, n_pers = tracker.update(keys, counts, soup.epoch, freqs, n_windows)
+    a_t_n, n_pers_n = tracker_naive.update(keys, counts, soup.epoch)
     top = metrics.top_windows(flat, cfg.top_window, wrap, tape_len, cfg.top_k)
 
     s = soup.stats
     runs = int(s[core.STAT_RUNS])
+    steps = int(s[core.STAT_STEPS])
     row = {
         "epoch": soup.epoch,
         "entropy_bits": round(h, 6),
-        "zlib_bits": round(c, 6),
-        "high_order_entropy": round(ho, 6),
-        "mean_steps": round(s[core.STAT_STEPS] / runs, 4) if runs else 0.0,
+        "comp_bits": round(c, 6),
+        "high_order_entropy": round(h - c, 6),
+        "brotli2_bits": round(c2, 6),
+        "zlib_bits": round(cz, 6),
+        "hoe_zlib": round(h - cz, 6),
+        "frac_steps_in_loop": round(s[core.STAT_REVISITS] / steps, 6) if steps else 0.0,
+        "ops_per_run": round(s[core.STAT_COMMANDS] / runs, 4) if runs else 0.0,
+        "n_persistent_naive": n_pers_n,
+        "A_t_naive": a_t_n,
+        "mean_steps": round(steps / runs, 4) if runs else 0.0,
         "frac_copy_runs": round(s[core.STAT_COPYRUNS] / runs, 6) if runs else 0.0,
         "frac_term_budget": round(s[core.STAT_TERM0] / runs, 6) if runs else 0.0,
         "frac_term_off_region": round(s[core.STAT_TERM1] / runs, 6) if runs else 0.0,
         "frac_term_unmatched": round(s[core.STAT_TERM2] / runs, 6) if runs else 0.0,
         "runs": runs,
-        "steps": int(s[core.STAT_STEPS]),
+        "steps": steps,
         "mutations": soup.mutations,
         "distinct_windows": int(keys.size),
         "n_persistent": n_pers,
@@ -140,7 +183,12 @@ def main(argv=None):
         fh.write(cfg.to_json() + "\n")
 
     soup = Soup(cfg)
-    tracker = metrics.PersistenceTracker(cfg.c_min, cfg.tau)
+    trackers = (
+        metrics.PersistenceTracker(cfg.c_min, cfg.tau_epochs, cfg.null_ratio,
+                                   cfg.window_size),
+        metrics.PersistenceTracker(cfg.c_min, cfg.tau_epochs, 0.0,
+                                   cfg.window_size),
+    )
     kymo = []
     kymo_path = os.path.join(out, "kymograph.npy")
 
@@ -157,7 +205,7 @@ def main(argv=None):
         writer.writeheader()
 
         def snapshot():
-            row, top = measure(soup, tracker)
+            row, top = measure(soup, trackers)
             row["wall_s"] = round(time.perf_counter() - t_start, 3)
             writer.writerow(row)
             cfh.flush()
@@ -211,6 +259,8 @@ def main(argv=None):
             "platform": platform.platform(),
             "python": sys.version.split()[0],
             "numpy": np.__version__,
+            "walk_len": cfg.walk_len,
+            "region_len": cfg.region_len,
         }, fh, indent=2)
         fh.write("\n")
     if not args.quiet:

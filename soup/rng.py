@@ -99,3 +99,45 @@ def shuffle(perm, state):
         tmp = perm[i]
         perm[i] = perm[j]
         perm[j] = tmp
+
+
+@njit(cache=True, nogil=True)
+def mutate_indel(mem, rate, R, state):
+    """Insertions and deletions on a ring, confined to R bytes after the site.
+
+    ``rate`` is the *total* indel probability per byte per epoch; insertions
+    and deletions each get half of it.  Both forms shift only within
+    ``[p, p+R]`` -- no mutation moves data further than a run can reach -- and
+    both inject exactly one uniformly random byte, so an indel costs the same
+    entropy as a substitution and only the reading frame differs:
+
+      insertion at p   mem[p..p+R-1] slide up one, mem[p] becomes random,
+                       the byte that was at p+R is lost
+      deletion at p    mem[p+1..p+R] slide down one, mem[p+R] becomes random
+
+    Sites are drawn with geometric gaps, the same way :func:`mutate` does.
+    """
+    if rate <= 0.0:
+        return 0
+    n = mem.shape[0]
+    log1m = np.log1p(-rate)
+    i = -1
+    count = 0
+    while True:
+        u = rand_float(state)
+        if u <= 0.0:
+            u = 1e-300
+        gap = np.int64(np.floor(np.log(u) / log1m)) + 1
+        i += gap
+        if i >= n:
+            break
+        if next_u64(state) & np.uint64(1) == np.uint64(0):
+            for j in range(R, 0, -1):       # insertion: slide up
+                mem[(i + j) % n] = mem[(i + j - 1) % n]
+            mem[i] = rand_byte(state)
+        else:
+            for j in range(0, R):            # deletion: slide down
+                mem[(i + j) % n] = mem[(i + j + 1) % n]
+            mem[(i + R) % n] = rand_byte(state)
+        count += 1
+    return count

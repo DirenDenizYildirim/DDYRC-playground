@@ -52,8 +52,8 @@ def style():
     })
 
 
-def read_metrics(run_dir):
-    with open(os.path.join(run_dir, "metrics.csv")) as fh:
+def read_metrics(run_dir, name="metrics.csv"):
+    with open(os.path.join(run_dir, name)) as fh:
         rows = list(csv.DictReader(fh))
     out = {}
     for key in rows[0]:

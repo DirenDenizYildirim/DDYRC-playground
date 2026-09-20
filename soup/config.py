@@ -7,14 +7,25 @@ from dataclasses import dataclass
 
 @dataclass
 class Config:
-    mode: str = "ring"            # "ring" or "bff"
+    mode: str = "ring"            # "ring", "bff" or "blocks"
 
     # ring mode
     M: int = 65536                # ring size in bytes
     R: int = 128                  # ip/head confinement radius around p
 
-    # bff mode
-    N: int = 1024                 # number of 64-byte tapes
+    # bff and blocks modes
+    N: int = 1024                 # number of 64-byte tapes / blocks
+    d: int = 2                    # blocks mode: partner drawn from +/-d blocks
+
+    # reproduce cubff exactly: "none", "cubff" (heads read from tape[0..1],
+    # pc=2) or "cubff_noheads" (heads at 0, pc=0 -- what our spec says).
+    # Either value replaces our RNG, pairing and mutation with cubff's, so a
+    # run can be diffed byte-for-byte against a cubff checkpoint.
+    compat: str = "none"
+
+    # language variants
+    no_copy: int = 0              # '.' and ',' become no-ops
+    indel: int = 0                # add insertions and deletions to mutation
 
     # both modes
     k: int = 8192                 # step budget per run
@@ -27,7 +38,11 @@ class Config:
     tape_dump_interval: int = 1000  # epochs between raw .npy dumps
     window_size: int = 8          # window length for A(t)
     c_min: int = 8                # count threshold for "abundant"
-    tau: int = 5                  # consecutive snapshots needed for "persistent"
+    tau_epochs: int = 250         # epochs a window must stay abundant to persist
+    null_ratio: float = 5.0       # and this many times its i.i.d. expectation
+    compressor: str = "brotli6"   # brotli6 | brotli2 | brotli11 | zlib | zstd
+    tau: int = 5                  # legacy: the old snapshot-counted tau, kept
+                                  # only so pre-existing config.json files load
     top_window: int = 16          # window length for the pattern log
     top_k: int = 10               # how many patterns to log
     kymo_width: int = 4096        # bytes of memory recorded per kymograph row
@@ -57,6 +72,20 @@ class Config:
     @property
     def ticks_per_epoch(self):
         return self.M // 64 if self.mode == "ring" else self.N // 2
+
+    @property
+    def region_len(self):
+        return 2 * self.R + 1 if self.mode == "ring" else 128
+
+    @property
+    def walk_len(self):
+        """Steps a run takes if it only ever executes no-ops.
+
+        The floor that `mean_steps` sits on when nothing loops.
+        """
+        if self.mode == "ring":
+            return self.R + 1
+        return 126 if self.compat == "cubff" else 128
 
     def to_json(self):
         return json.dumps(dataclasses.asdict(self), indent=2, sort_keys=True)
@@ -94,8 +123,14 @@ def build_config(args):
 
 
 def validate(cfg):
-    if cfg.mode not in ("ring", "bff"):
-        raise SystemExit("mode must be 'ring' or 'bff'")
+    if cfg.mode not in ("ring", "bff", "blocks"):
+        raise SystemExit("mode must be 'ring', 'bff' or 'blocks'")
+    if cfg.compat not in ("none", "cubff", "cubff_noheads"):
+        raise SystemExit("compat must be 'none', 'cubff' or 'cubff_noheads'")
+    if cfg.compat != "none" and cfg.mode != "bff":
+        raise SystemExit("compat modes only apply to --mode bff")
+    if cfg.compressor not in ("brotli6", "brotli2", "brotli11", "zlib", "zstd"):
+        raise SystemExit("unknown compressor: %s" % cfg.compressor)
     if cfg.head_bound not in ("wrap", "halt"):
         raise SystemExit("head_bound must be 'wrap' or 'halt'")
     if cfg.mode == "ring":
@@ -106,6 +141,8 @@ def validate(cfg):
     else:
         if cfg.N < 2 or cfg.N % 2:
             raise SystemExit("N must be a positive even number")
+        if cfg.mode == "blocks" and not 1 <= cfg.d <= cfg.N // 2:
+            raise SystemExit("d must be between 1 and N/2")
     if not 0.0 <= cfg.mu <= 1.0:
         raise SystemExit("mu must be in [0, 1]")
     if cfg.k < 1:

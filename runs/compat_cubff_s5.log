@@ -1,0 +1,14 @@
+epoch       0  HO=-0.0001  meanSteps=     0.0  copy=0.000  A(t)=0  sim=0.0s
+epoch     250  HO=0.0846  meanSteps=   819.8  copy=0.569  A(t)=0  sim=13.2s
+epoch     500  HO=0.0894  meanSteps=   839.0  copy=0.679  A(t)=0  sim=26.6s
+epoch     750  HO=0.1134  meanSteps=   840.8  copy=0.738  A(t)=0  sim=40.0s
+epoch    1000  HO=0.1228  meanSteps=   853.5  copy=0.776  A(t)=0  sim=53.8s
+epoch    1250  HO=0.1377  meanSteps=   912.6  copy=0.787  A(t)=211  sim=68.5s
+epoch    1500  HO=0.1398  meanSteps=   950.7  copy=0.785  A(t)=225  sim=83.7s
+epoch    1750  HO=0.1330  meanSteps=   966.0  copy=0.778  A(t)=239  sim=99.2s
+epoch    2000  HO=4.7480  meanSteps=  1232.2  copy=0.778  A(t)=240  sim=121.7s
+epoch    2250  HO=4.6409  meanSteps=  4118.5  copy=0.931  A(t)=240  sim=175.0s
+epoch    2500  HO=5.1143  meanSteps=  6183.9  copy=0.991  A(t)=240  sim=256.8s
+epoch    2750  HO=5.3108  meanSteps=  8044.1  copy=0.999  A(t)=240  sim=358.6s
+epoch    3000  HO=5.5031  meanSteps=  8095.4  copy=0.999  A(t)=312  sim=453.7s
+takeover detected at epoch 3000; running to 5000

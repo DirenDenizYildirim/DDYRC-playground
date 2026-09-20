@@ -12,7 +12,6 @@ import os
 
 import numpy as np
 
-from .metrics import printable
 from .plots import read_metrics
 
 # detector constants
@@ -27,6 +26,30 @@ HOE_RISE = 1.0            # bits/byte above the epoch-0 baseline counts as a ris
 HOE_SOFT = 0.5            # a weaker "structure is present" marker
 SUSTAIN = 5               # snapshots the condition must hold for
 H_COLLAPSE = 4.0          # bits/byte: order-0 entropy this low means a monoculture
+
+# --- end-state classifier ----------------------------------------------------
+#
+# Every finished run is put in exactly one class, from the median of its last
+# five snapshots.  The thresholds are stated here, applied to every run
+# identically, and printed with the answers.
+#
+#   random   memory still looks like the initial condition
+#   crystal  low-entropy fixed point: loops purged, every run a straight walk
+#   program  a repeated multi-byte pattern that contains brackets, and runs
+#            that spend real time executing it
+#
+# "well above the window length" is the discriminator that matters: a run that
+# only walks forward and falls off the end takes walk_len steps, so mean steps
+# at several times that means loops are actually running.
+CLASS_TAIL = 5            # snapshots averaged for the verdict
+RANDOM_H = 7.0            # order-0 entropy this high means nothing took over
+RANDOM_HOE = 0.5
+CRYSTAL_H = 3.0
+CRYSTAL_LOOP = 0.10       # fraction of steps spent re-running an instruction
+CRYSTAL_STEPS = 1.5       # x walk_len
+PROGRAM_HOE = 1.0
+PROGRAM_STEPS = 3.0       # x walk_len
+BRACKETS = set(b"[]")
 
 
 def _first_sustained(x, ok, sustain=SUSTAIN):
@@ -68,6 +91,7 @@ def detect(m):
         "mean_steps_final": round(float(m["mean_steps"][-1]), 1),
         "frac_copy_final": round(float(m["frac_copy_runs"][-1]), 4),
         "A_t_final": int(a[-1]),
+        "A_t_naive_final": int(m["A_t_naive"][-1]) if "A_t_naive" in m else None,
         "A_t_rate_first_half": round(float((a[half] - a[0]) / span_early * 1000), 3),
         "A_t_rate_second_half": round(float((a[-1] - a[half]) / span_late * 1000), 3),
         "n_persistent_final": int(m["n_persistent"][-1]),
@@ -84,14 +108,78 @@ def final_patterns(run_dir, top=5):
     return lines[start:start + 1 + top]
 
 
+def _tail(m, key, n=CLASS_TAIL):
+    if key not in m or m[key].size == 0:
+        return None
+    return float(np.median(m[key][-min(n, m[key].size):]))
+
+
+def top_pattern_bytes(run_dir):
+    """The most frequent window in the last block of patterns.log, as bytes."""
+    try:
+        with open(os.path.join(run_dir, "patterns.log")) as fh:
+            lines = fh.read().splitlines()
+    except OSError:
+        return b""
+    starts = [i for i, l in enumerate(lines) if l.startswith("#")]
+    if not starts or starts[-1] + 1 >= len(lines):
+        return b""
+    parts = lines[starts[-1] + 1].split()
+    try:
+        return bytes.fromhex(parts[-1])
+    except ValueError:
+        return b""
+
+
+def classify(m, walk_len, top_bytes):
+    """Label a finished run: random, crystal, program, or mixed."""
+    h = _tail(m, "entropy_bits")
+    hoe = _tail(m, "high_order_entropy")
+    steps = _tail(m, "mean_steps")
+    loop = _tail(m, "frac_steps_in_loop")
+    if h is None or hoe is None:
+        return "unknown", {}
+    facts = {"H": h, "HOE": hoe, "mean_steps": steps, "frac_loop": loop,
+             "walk_len": walk_len,
+             "top_has_bracket": bool(set(top_bytes) & BRACKETS)}
+    if (hoe >= PROGRAM_HOE and steps is not None
+            and steps >= PROGRAM_STEPS * walk_len and facts["top_has_bracket"]):
+        return "program", facts
+    if (h < CRYSTAL_H and (loop is None or loop < CRYSTAL_LOOP)
+            and (steps is None or steps <= CRYSTAL_STEPS * walk_len)):
+        return "crystal", facts
+    if h >= RANDOM_H and hoe < RANDOM_HOE:
+        return "random", facts
+    return "mixed", facts
+
+
 def analyse(run_dir):
     cfg = json.load(open(os.path.join(run_dir, "config.json")))
     summary = json.load(open(os.path.join(run_dir, "summary.json")))
-    d = detect(read_metrics(run_dir))
+    m = read_metrics(run_dir)
+    rescored_path = os.path.join(run_dir, "rescored.csv")
+    if os.path.exists(rescored_path):
+        m_res = read_metrics(run_dir, "rescored.csv")
+        for key in ("entropy_bits", "comp_bits", "high_order_entropy",
+                    "A_t", "A_t_naive", "n_persistent"):
+            if key in m_res:
+                m[key + "_rescored"] = m_res[key]
+    d = detect(m)
     d["run"] = os.path.basename(run_dir.rstrip("/"))
     d["mode"] = cfg["mode"]
     d["seed"] = cfg["seed"]
     d["N_or_M"] = cfg["N"] if cfg["mode"] == "bff" else cfg["M"]
+    walk = summary.get("walk_len")
+    if walk is None:
+        walk = cfg["R"] + 1 if cfg["mode"] == "ring" else 128
+    d["klass"], facts = classify(m, walk, top_pattern_bytes(run_dir))
+    d["class_facts"] = facts
+    d["frac_steps_in_loop"] = _tail(m, "frac_steps_in_loop")
+    d["compat"] = cfg.get("compat", "none")
+    if "A_t_rescored" in m:
+        d["A_t_rescored"] = int(m["A_t_rescored"][-1])
+        d["A_t_naive_rescored"] = int(m["A_t_naive_rescored"][-1])
+        d["hoe_rescored"] = round(float(m["high_order_entropy_rescored"][-1]), 4)
     d["wall_seconds"] = summary["wall_seconds"]
     d["sim_seconds"] = summary["sim_seconds"]
     d["epochs_per_second"] = summary["epochs_per_second"]
@@ -99,15 +187,13 @@ def analyse(run_dir):
     return d
 
 
-COLUMNS = [("run", "run"), ("takeover_epoch", "takeover"),
-           ("hoe_soft_epoch", "HOE>0.5"),
-           ("entropy_collapse_epoch", "H collapse"),
-           ("entropy_final", "H final"), ("zlib_final", "zlib final"),
-           ("hoe_final", "HOE final"), ("hoe_max", "HOE max"),
+COLUMNS = [("run", "run"), ("klass", "class"),
+           ("takeover_epoch", "takeover"),
+           ("entropy_final", "H"), ("hoe_final", "HOE"), ("hoe_max", "HOE max"),
            ("mean_steps_final", "steps/run"),
-           ("frac_copy_final", "copy frac"), ("A_t_final", "A(t)"),
-           ("A_t_rate_first_half", "dA/1k (1st half)"),
-           ("A_t_rate_second_half", "dA/1k (2nd half)")]
+           ("frac_steps_in_loop", "in-loop"),
+           ("frac_copy_final", "copy frac"),
+           ("A_t_final", "A(t)"), ("A_t_naive_final", "A(t) naive")]
 
 
 def table(rows):

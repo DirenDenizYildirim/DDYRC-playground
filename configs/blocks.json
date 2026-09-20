@@ -1,0 +1,6 @@
+{
+  "mode": "blocks", "N": 8192, "d": 2, "k": 8192, "mu": 0.00024,
+  "epochs": 20000, "snapshot_interval": 50, "tape_dump_interval": 1000,
+  "window_size": 8, "c_min": 8, "tau_epochs": 250, "null_ratio": 5.0,
+  "compressor": "brotli6", "top_window": 16, "top_k": 10, "kymo_width": 4096
+}
