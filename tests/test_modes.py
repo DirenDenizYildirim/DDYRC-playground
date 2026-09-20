@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from soup import core
+from soup.interp import NO_LABELS, NO_LABELS_2D
 from soup.config import Config
 from soup.rng import make_state, mutate_indel
 from soup.run import Soup
@@ -51,7 +52,8 @@ def test_blocks_only_ever_touches_nearby_blocks():
     state = np.array([99], dtype=np.uint64)
     stats = np.zeros(core.N_STATS, dtype=np.int64)
     visited = np.zeros(128, dtype=np.int32)
-    core.blocks_epoch(soup.mem, soup.buf, 1, 2, 8192, state, stats, visited, 0)
+    core.blocks_epoch(soup.mem, soup.buf, 1, 2, 8192, state, stats, visited, 0,
+                      NO_LABELS_2D, NO_LABELS)
     changed = np.nonzero((soup.mem != before).any(axis=1))[0]
     assert changed.size <= 2
     if changed.size == 2:
@@ -93,11 +95,13 @@ def test_copies_do_happen_without_the_flag():
 
 
 def test_no_copy_still_costs_a_step():
-    from soup.interp import run_region_full
+    from soup.interp import NO_LABELS, NO_LABELS_2D, run_region_full
     buf = np.frombuffer(b"..." + bytes(5), dtype=np.uint8).copy()
     visited = np.zeros(8, dtype=np.int32)
-    on = run_region_full(buf.copy(), 0, 0, 0, 100, True, visited, 1, True)
-    off = run_region_full(buf.copy(), 0, 0, 0, 100, True, visited, 2, False)
+    on = run_region_full(buf.copy(), 0, 0, 0, 100, True, visited, 1,
+                         NO_LABELS, True)
+    off = run_region_full(buf.copy(), 0, 0, 0, 100, True, visited, 2,
+                          NO_LABELS, False)
     assert on[0] == off[0]          # same step count
     assert on[4] == off[4]          # still counted as commands
     assert on[1] == 3 and off[1] == 0

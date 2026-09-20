@@ -2,7 +2,7 @@
 import numpy as np
 
 from soup import core
-from soup.interp import run_region
+from soup.interp import NO_LABELS, NO_LABELS_2D, run_region
 from soup.replicator import OFFSET, PROGRAM, as_array
 
 L = len(PROGRAM)
@@ -47,7 +47,8 @@ def test_replicates_in_bff_mode_through_the_epoch_driver():
     state = np.array([12345], dtype=np.uint64)
     stats = np.zeros(core.N_STATS, dtype=np.int64)
     for _ in range(20):
-        core.bff_epoch(pop, buf, perm, 8192, state, stats, visited, _ * 2)
+        core.bff_epoch(pop, buf, perm, 8192, state, stats, visited, _ * 2,
+                       NO_LABELS_2D, NO_LABELS)
         if bytes(pop[1, :L]) == PROGRAM:
             break
     assert bytes(pop[0, :L]) == PROGRAM
@@ -63,7 +64,8 @@ def test_replicates_in_ring_mode_through_the_tick_driver():
     buf = np.zeros(2 * R + 1, dtype=np.uint8)
     stats = np.zeros(core.N_STATS, dtype=np.int64)
     visited = np.zeros(2 * R + 1, dtype=np.int32)
-    core.ring_tick_at(ring, buf, p, R, 8192, stats, visited, 1)
+    core.ring_tick_at(ring, buf, p, R, 8192, stats, visited, 1,
+                      NO_LABELS, NO_LABELS)
     assert bytes(ring[p:p + L]) == PROGRAM
     assert bytes(ring[p + OFFSET:p + OFFSET + L]) == PROGRAM
 
@@ -77,7 +79,8 @@ def test_replicates_across_the_ring_wraparound():
     buf = np.zeros(2 * R + 1, dtype=np.uint8)
     stats = np.zeros(core.N_STATS, dtype=np.int64)
     visited = np.zeros(2 * R + 1, dtype=np.int32)
-    core.ring_tick_at(ring, buf, p, R, 8192, stats, visited, 1)
+    core.ring_tick_at(ring, buf, p, R, 8192, stats, visited, 1,
+                      NO_LABELS, NO_LABELS)
     child = ring[(p + OFFSET + np.arange(L)) % m]
     assert bytes(child) == PROGRAM
 

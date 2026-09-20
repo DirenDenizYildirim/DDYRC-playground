@@ -60,9 +60,15 @@ TERM_UNMATCHED = 2   # a bracket had no match
 TERM_NAMES = {TERM_BUDGET: "budget", TERM_OFF_REGION: "off_region",
               TERM_UNMATCHED: "unmatched"}
 
+# pass these as ``labels`` to run without provenance tracking; the rank has to
+# match the memory being labelled, because numba types both branches of the
+# guard whether or not the array is empty
+NO_LABELS = np.zeros(0, dtype=np.uint8)
+NO_LABELS_2D = np.zeros((0, 64), dtype=np.uint8)
+
 
 @njit(cache=True, nogil=True)
-def run_region_full(buf, ip, h0, h1, k, wrap_heads, visited, gen,
+def run_region_full(buf, ip, h0, h1, k, wrap_heads, visited, gen, labels,
                     allow_copy=True):
     """Execute ``buf`` in place with instrumentation.
 
@@ -86,7 +92,16 @@ def run_region_full(buf, ip, h0, h1, k, wrap_heads, visited, gen,
     step and still count as commands, they just move no bytes.  It exists for
     the no-copy control in RESULTS.md, which asks what the soup does when the
     only way to move a byte is ``+``/``-`` on the cell under head0.
+
+    ``labels`` is an optional provenance array the same length as ``buf``, or
+    length 0 to switch provenance off.  A copy carries the source cell's label
+    with the byte; every other instruction, and mutation, leaves the
+    destination cell's label alone.  Nothing in the machine ever *reads* a
+    label, so a run's trajectory cannot depend on one -- `tests/test_labels.py`
+    asserts that memory and every counter come out bit-identical with labels
+    on and off.
     """
+    nlab = labels.shape[0]
     n = buf.shape[0]
     steps = 0
     ncopy = 0
@@ -131,10 +146,14 @@ def run_region_full(buf, ip, h0, h1, k, wrap_heads, visited, gen,
         elif c == 46:      # '.'
             if allow_copy:
                 buf[h1] = buf[h0]
+                if nlab > 0:
+                    labels[h1] = labels[h0]
                 ncopy += 1
         elif c == 44:      # ','
             if allow_copy:
                 buf[h0] = buf[h1]
+                if nlab > 0:
+                    labels[h0] = labels[h1]
                 ncopy += 1
         elif c == 91:      # '['
             if buf[h0] == 0:
@@ -185,8 +204,11 @@ def run_region(buf, ip, h0, h1, k, wrap_heads=True):
     in :mod:`soup.core` call the full form with a reused buffer instead.
     """
     visited = np.zeros(buf.shape[0], dtype=np.int32)
-    steps, ncopy, term, _, _ = run_region_full(buf, ip, h0, h1, k,
-                                               wrap_heads, visited, 1, True)
+    # allocated here rather than taken from the module: numba freezes a global
+    # array as read-only, and the kernel writes to labels on a copy
+    off = np.zeros(0, dtype=np.uint8)
+    steps, ncopy, term, _, _ = run_region_full(buf, ip, h0, h1, k, wrap_heads,
+                                               visited, 1, off, True)
     return steps, ncopy, term
 
 

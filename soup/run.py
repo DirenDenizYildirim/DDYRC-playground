@@ -28,11 +28,14 @@ CSV_FIELDS = [
     "brotli2_bits", "zlib_bits", "hoe_zlib",
     # computation
     "mean_steps", "frac_copy_runs", "frac_steps_in_loop", "ops_per_run",
+    "copies_per_run",
     "frac_term_budget", "frac_term_off_region", "frac_term_unmatched",
     "runs", "steps", "mutations",
     # novelty
     "distinct_windows", "n_persistent", "A_t",
     "n_persistent_naive", "A_t_naive",
+    # population structure, only meaningful for the tape-based modes
+    "distinct_tapes", "distinct_labels",
 ]
 
 
@@ -50,19 +53,38 @@ class Soup:
         self.buf = np.zeros(cfg.region_len, dtype=np.uint8)
         self.visited = np.zeros(cfg.region_len, dtype=np.int32)
         self.gen = 0
+        # an empty label array must keep the rank of the memory it shadows
+        off_shape = (0,) + self.mem.shape[1:]
+        self.labels = np.zeros(self.mem.shape if cfg.labels else off_shape,
+                               dtype=np.uint8)
+        self.lab_buf = np.zeros(cfg.region_len if cfg.labels else 0,
+                                dtype=np.uint8)
         if cfg.compat != "none":
             self.seed_base = compat_mod.seed_base_for(cfg.seed)
             compat_mod.cubff_init(
-                self.mem, compat_mod.seed_of(self.seed_base, np.uint64(0)))
+                self.mem, compat_mod.seed_of_host(self.seed_base, 0))
             self.mut_prob = int(round(cfg.mu * compat_mod.CUBFF_MUTATION_DENOM))
         else:
             fill_random(self.flat, self.state)
+        if cfg.load:
+            saved = np.load(cfg.load)
+            if saved.shape != self.mem.shape:
+                raise SystemExit("checkpoint shape %s does not match this "
+                                 "configuration's %s"
+                                 % (saved.shape, self.mem.shape))
+            self.mem[...] = saved
+        if cfg.labels:
+            # one lineage id per tape, so label turnover measures coalescence
+            per = self.mem.shape[0] if self.mem.ndim > 1 else self.mem.size
+            self.labels[...] = np.broadcast_to(
+                (np.arange(per) % 251).astype(np.uint8).reshape(
+                    (per,) + (1,) * (self.mem.ndim - 1)), self.mem.shape)
         if cfg.plant:
             self._plant(cfg.plant)
         self.stats = np.zeros(core.N_STATS, dtype=np.int64)
         self.mutations = 0
         self.sim_s = 0.0
-        self.epoch = 0
+        self.epoch = cfg.start_epoch
 
     @property
     def flat(self):
@@ -95,22 +117,25 @@ class Soup:
             m, self.gen = compat_mod.cubff_chunk(
                 self.mem, self.buf, self.perm, self.epoch, n_epochs,
                 self.seed_base, self.mut_prob, cfg.compat == "cubff",
-                cfg.k, self.stats, self.visited, self.gen)
+                cfg.k, self.stats, self.visited, self.gen, self.labels,
+                self.lab_buf)
         elif cfg.mode == "ring":
             m, self.gen = core.ring_chunk(
                 self.mem, self.buf, n_epochs, cfg.ticks_per_epoch, cfg.R,
                 cfg.k, cfg.mu, self.state, self.stats, self.visited, self.gen,
-                wrap, allow_copy, bool(cfg.indel))
+                self.labels, self.lab_buf, cfg.head_source == "tape", wrap,
+                allow_copy, bool(cfg.indel))
         elif cfg.mode == "blocks":
             m, self.gen = core.blocks_chunk(
                 self.mem, self.buf, n_epochs, cfg.ticks_per_epoch, cfg.d,
                 cfg.k, cfg.mu, self.state, self.stats, self.visited, self.gen,
-                wrap, allow_copy)
+                self.labels, self.lab_buf, cfg.head_source == "tape", wrap,
+                allow_copy)
         else:
             m, self.gen = core.bff_chunk(
                 self.mem, self.buf, self.perm, n_epochs, cfg.k, cfg.mu,
-                self.state, self.stats, self.visited, self.gen, wrap,
-                allow_copy)
+                self.state, self.stats, self.visited, self.gen, self.labels,
+                self.lab_buf, wrap, allow_copy)
         dt = time.perf_counter() - t0
         self.sim_s += dt
         self.mutations += int(m)
@@ -149,8 +174,13 @@ def measure(soup, trackers):
         "hoe_zlib": round(h - cz, 6),
         "frac_steps_in_loop": round(s[core.STAT_REVISITS] / steps, 6) if steps else 0.0,
         "ops_per_run": round(s[core.STAT_COMMANDS] / runs, 4) if runs else 0.0,
+        "copies_per_run": round(s[core.STAT_COPIES] / runs, 4) if runs else 0.0,
         "n_persistent_naive": n_pers_n,
         "A_t_naive": a_t_n,
+        "distinct_tapes": (len(np.unique(soup.mem.view([("", np.uint8)] * 64)))
+                           if cfg.mode != "ring" else ""),
+        "distinct_labels": (int(np.unique(soup.labels).size)
+                            if soup.labels.size else ""),
         "mean_steps": round(steps / runs, 4) if runs else 0.0,
         "frac_copy_runs": round(s[core.STAT_COPYRUNS] / runs, 6) if runs else 0.0,
         "frac_term_budget": round(s[core.STAT_TERM0] / runs, 6) if runs else 0.0,
@@ -199,6 +229,9 @@ def main(argv=None):
     def dump_tape():
         np.save(os.path.join(out, "snapshots", "epoch_%08d.npy" % soup.epoch),
                 soup.mem)
+        if soup.labels.size:
+            np.save(os.path.join(out, "snapshots",
+                                 "labels_%08d.npy" % soup.epoch), soup.labels)
 
     with open(csv_path, "w", newline="") as cfh, open(pat_path, "w") as pfh:
         writer = csv.DictWriter(cfh, fieldnames=CSV_FIELDS)
@@ -224,9 +257,9 @@ def main(argv=None):
                                      row["A_t"], row["sim_s"]), flush=True)
             return row
 
-        base = snapshot()["high_order_entropy"]   # epoch 0: random condition
+        base = snapshot()["high_order_entropy"]   # the starting condition
         dump_tape()
-        streak, stop_at, detected = 0, cfg.epochs, False
+        streak, stop_at, detected = 0, cfg.start_epoch + cfg.epochs, False
         while soup.epoch < stop_at:
             n = min(cfg.snapshot_interval, stop_at - soup.epoch)
             soup.advance(n)
@@ -235,7 +268,7 @@ def main(argv=None):
                 streak = streak + 1 if row["high_order_entropy"] >= base + HOE_RISE else 0
                 if streak >= SUSTAIN:
                     detected = True
-                    stop_at = min(cfg.epochs,
+                    stop_at = min(cfg.start_epoch + cfg.epochs,
                                   soup.epoch + cfg.stop_after_takeover)
                     print("takeover detected at epoch %d; running to %d"
                           % (soup.epoch, stop_at), flush=True)

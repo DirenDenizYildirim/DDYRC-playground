@@ -2,6 +2,7 @@
 import argparse
 import dataclasses
 import json
+import os
 from dataclasses import dataclass
 
 
@@ -22,6 +23,16 @@ class Config:
     # Either value replaces our RNG, pairing and mutation with cubff's, so a
     # run can be diffed byte-for-byte against a cubff checkpoint.
     compat: str = "none"
+
+    # cubff's "heads read from the first two bytes, pc=2" rule, applied to
+    # modes other than bff: "fixed" is the spec's rule, "tape" is cubff's.
+    head_source: str = "fixed"
+
+    # resume from a saved soup instead of a random initial condition
+    load: str = ""                # path to a .npy memory dump
+    start_epoch: int = 0          # the epoch that dump was taken at
+
+    labels: int = 0               # carry provenance labels (never readable)
 
     # language variants
     no_copy: int = 0              # '.' and ',' become no-ops
@@ -84,8 +95,10 @@ class Config:
         The floor that `mean_steps` sits on when nothing loops.
         """
         if self.mode == "ring":
-            return self.R + 1
-        return 126 if self.compat == "cubff" else 128
+            return self.R + 1 if self.head_source == "fixed" else self.R - 1
+        if self.compat == "cubff" or self.head_source == "tape":
+            return 126
+        return 128
 
     def to_json(self):
         return json.dumps(dataclasses.asdict(self), indent=2, sort_keys=True)
@@ -131,6 +144,10 @@ def validate(cfg):
         raise SystemExit("compat modes only apply to --mode bff")
     if cfg.compressor not in ("brotli6", "brotli2", "brotli11", "zlib", "zstd"):
         raise SystemExit("unknown compressor: %s" % cfg.compressor)
+    if cfg.head_source not in ("fixed", "tape"):
+        raise SystemExit("head_source must be 'fixed' or 'tape'")
+    if cfg.load and not os.path.exists(cfg.load):
+        raise SystemExit("no such checkpoint: %s" % cfg.load)
     if cfg.head_bound not in ("wrap", "halt"):
         raise SystemExit("head_bound must be 'wrap' or 'halt'")
     if cfg.mode == "ring":

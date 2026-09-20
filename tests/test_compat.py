@@ -49,7 +49,7 @@ def test_the_two_cubff_languages_actually_differ():
 
 
 def test_heads_are_read_from_the_first_two_bytes_in_cubff_mode():
-    from soup.interp import run_region_full
+    from soup.interp import NO_LABELS, run_region_full
     tape = np.zeros(128, dtype=np.uint8)
     tape[0] = 200          # head0 -> 200 % 128 = 72
     tape[1] = 5            # head1 -> 5
@@ -57,7 +57,7 @@ def test_heads_are_read_from_the_first_two_bytes_in_cubff_mode():
     buf = tape.copy()
     visited = np.zeros(128, dtype=np.int32)
     run_region_full(buf, 2, int(tape[0]) % 128, int(tape[1]) % 128, 8192,
-                    True, visited, 1)
+                    True, visited, 1, NO_LABELS)
     assert buf[72] == 1    # the '+' landed 72 bytes in, not at 0
 
 

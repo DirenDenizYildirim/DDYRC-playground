@@ -21,8 +21,8 @@ the step budget is 8192.
 import numpy as np
 from numba import njit
 
-from .core import (STAT_COMMANDS, STAT_COPYRUNS, STAT_REVISITS, STAT_RUNS,
-                   STAT_STEPS, STAT_TERM0)
+from .core import (STAT_COMMANDS, STAT_COPIES, STAT_COPYRUNS, STAT_REVISITS,
+                   STAT_RUNS, STAT_STEPS, STAT_TERM0)
 from .interp import run_region_full
 
 TAPE = 64
@@ -53,6 +53,17 @@ def seed_of(seed_base, x):
 def seed_base_for(seed):
     """SplitMix64(params.seed), computed once on the host."""
     return np.uint64(splitmix64(np.uint64(seed)))
+
+
+def seed_of_host(seed_base, x):
+    """`seed_of` for callers outside nopython mode.
+
+    numba hands a uint64 result back as a plain Python int, and a later call
+    passing that int into another kernel gets typed by its *value* -- so a
+    small seed compiles the kernel for int64 and a large one then fails with
+    "int too big to convert".  Casting on the way out pins it to uint64.
+    """
+    return np.uint64(seed_of(np.uint64(seed_base), np.uint64(x)))
 
 
 @njit(cache=True, nogil=True)
@@ -86,7 +97,7 @@ def cubff_shuffle(s, epoch, seed_base):
 
 @njit(cache=True, nogil=True)
 def cubff_epoch(pop, buf, s, epoch, seed_base, mut_prob, heads_from_tape,
-                k, stats, visited, gen0):
+                k, stats, visited, gen0, labels, lab_buf):
     """One cubff epoch: shuffle, then for each pair mutate-then-run-then-store.
 
     cubff mutates the concatenated pair immediately before executing it, not
@@ -105,6 +116,9 @@ def cubff_epoch(pop, buf, s, epoch, seed_base, mut_prob, heads_from_tape,
         p2 = s[2 * index + 1]
         buf[0:TAPE] = pop[p1]
         buf[TAPE:PAIR] = pop[p2]
+        if labels.shape[0] > 0:
+            lab_buf[0:TAPE] = labels[p1]
+            lab_buf[TAPE:PAIR] = labels[p2]
         row = (np.uint64(n) * eseed + np.uint64(index)) * np.uint64(PAIR)
         for i in range(PAIR):
             rng = splitmix64(row + np.uint64(i))
@@ -121,9 +135,12 @@ def cubff_epoch(pop, buf, s, epoch, seed_base, mut_prob, heads_from_tape,
             pc = 0
         gen += 1
         steps, ncopy, term, revis, ncmd = run_region_full(
-            buf, pc, h0, h1, k, True, visited, gen)
+            buf, pc, h0, h1, k, True, visited, gen, lab_buf)
         pop[p1] = buf[0:TAPE]
         pop[p2] = buf[TAPE:PAIR]
+        if labels.shape[0] > 0:
+            labels[p1] = lab_buf[0:TAPE]
+            labels[p2] = lab_buf[TAPE:PAIR]
         stats[STAT_RUNS] += 1
         stats[STAT_STEPS] += steps
         if ncopy > 0:
@@ -131,16 +148,18 @@ def cubff_epoch(pop, buf, s, epoch, seed_base, mut_prob, heads_from_tape,
         stats[STAT_TERM0 + term] += 1
         stats[STAT_REVISITS] += revis
         stats[STAT_COMMANDS] += ncmd
+        stats[STAT_COPIES] += ncopy
     return n_mut, gen
 
 
 @njit(cache=True, nogil=True)
 def cubff_chunk(pop, buf, s, epoch0, n_epochs, seed_base, mut_prob,
-                heads_from_tape, k, stats, visited, gen0):
+                heads_from_tape, k, stats, visited, gen0, labels, lab_buf):
     gen = gen0
     total = 0
     for e in range(n_epochs):
         n_mut, gen = cubff_epoch(pop, buf, s, epoch0 + e, seed_base, mut_prob,
-                                 heads_from_tape, k, stats, visited, gen)
+                                 heads_from_tape, k, stats, visited, gen,
+                                 labels, lab_buf)
         total += n_mut
     return total, gen
