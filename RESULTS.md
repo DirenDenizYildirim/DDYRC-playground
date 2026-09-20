@@ -18,7 +18,7 @@ with cubff's initial machine state.** Nothing else tested does.
 | configuration | n | program-class | rate (95% CI) |
 |---|---|---|---|
 | **bff, `--compat cubff`** (head0/head1 read from `tape[0..1]`, pc = 2) | 17 | **11** | **0.65 (0.41–0.83)** |
-| bff, `--compat cubff_noheads` (our spec: heads at 0, pc = 0) | 6 | 1 | 0.17 (0.03–0.56) |
+| bff, `--compat cubff_noheads` (our spec: heads at 0, pc = 0) | 7 | 1 | 0.14 (0.03–0.51) |
 | bff, our scaffolding, N = 1024 … 32768 | 10 | 0 | 0.00 (0.00–0.28) |
 | blocks, d = 1 / 2 / 8, N = 8192 | 11 | 0 | 0.00 (0.00–0.26) |
 | ring, control | 3 | 0 → *crystal* | 0.00 (0.00–0.56) |
@@ -172,7 +172,7 @@ before epoch 16000 and the end state classifies as *program*.
 | configuration | n | program | rate | 95% CI (Wilson) | takeover epochs |
 |---|---|---|---|---|---|
 | `--compat cubff` (heads from tape, pc=2) | 17 | 11 | **0.65** | 0.41–0.83 | 2000, 2750, 4000, 4250, 5500, 8000, 8750, 9500, 9500, 10250, 11250 |
-| `--compat cubff_noheads` (our spec) | 6 | 1 | **0.17** | 0.03–0.56 | 2750 |
+| `--compat cubff_noheads` (our spec) | 7 | 1 | **0.14** | 0.03–0.51 | 2750 |
 | our own bff scaffolding, N=32768, 64000 epochs | 3 | 0 | 0.00 | 0.00–0.56 | — |
 
 The 0.65 rate is statistically consistent with the 40%-within-16k-epochs the
@@ -182,13 +182,13 @@ result reproduces.**
 
 The head rule is the difference, but the evidence is suggestive rather than
 conclusive at this sample size. Comparing the two compat languages directly,
-11/17 against 1/6 gives Fisher p = 0.069. Pooling the three earlier N=32768
+11/17 against 1/7 gives Fisher p = 0.069. Pooling the three earlier N=32768
 runs — the same language, our scaffolding, a *four times longer* budget, no
-transition — gives 11/17 against 1/9 and p = 0.015. Pooling is defensible
-here because `--compat cubff_noheads` is provably the same language as our
-bff (byte-exact against cubff, `tests/test_compat.py`), but it mixes two RNG
-streams and two epoch budgets, so it is stated separately rather than quietly
-merged.
+transition — gives 11/17 against 1/10 (rate 0.10, CI 0.02–0.40) and p = 0.014.
+Pooling is defensible here because `--compat cubff_noheads` is provably the
+same language as our bff (byte-exact against cubff, `tests/test_compat.py`),
+but it mixes two RNG streams and two epoch budgets, so it is stated separately
+rather than quietly merged.
 
 **The earlier write-up said bff_noheads never transitions. That was wrong** —
 it was an artefact of ten runs, not a property of the language. Seed 103
@@ -578,7 +578,7 @@ simply wrong.
    the git history of this file. Seed 103 transitions at epoch 2750. The
    corrected statement is that both languages transition and the heads variant
    transitions several times more often (p = 0.069 comparing the compat
-   languages directly, 0.015 pooling the earlier runs).
+   languages directly, 0.014 pooling the earlier runs).
 6. **"Head confinement is load-bearing for the ring result" was also wrong**,
    and was corrected earlier in the same way: by implementing the alternative
    rule and measuring it rather than arguing about it.

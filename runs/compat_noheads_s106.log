@@ -62,3 +62,5 @@ epoch   15000  HO=0.2361  meanSteps=   828.6  copy=0.753  A(t)=909  sim=847.5s
 epoch   15250  HO=0.3801  meanSteps=  1593.4  copy=0.761  A(t)=910  sim=873.7s
 epoch   15500  HO=0.3308  meanSteps=  2326.3  copy=0.763  A(t)=910  sim=910.8s
 epoch   15750  HO=0.2291  meanSteps=  2419.7  copy=0.755  A(t)=910  sim=949.4s
+epoch   16000  HO=0.1474  meanSteps=  2229.0  copy=0.748  A(t)=1007  sim=985.3s
+done: 16000 epochs in 1069.7s wall (985.3s simulating), runs/compat_noheads_s106

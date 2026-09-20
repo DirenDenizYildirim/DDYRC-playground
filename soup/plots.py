@@ -101,13 +101,52 @@ def line_panel(ax, runs, field, title, ylabel, logy=False):
     return ax
 
 
+MAX_SERIES = len(SERIES)   # past this, facet rather than cycle the palette
+
+
 def plot_series(runs, out_path, field, title, ylabel, logy=False, note=None):
+    """One panel for up to three runs; small multiples beyond that.
+
+    The categorical palette has three slots that stay separable for
+    colour-vision deficiency when every pair can appear together.  Cycling it
+    for a fourth series would put two identical blues on one axis, so past
+    three runs identity comes from the panel instead of the colour.
+    """
     style()
-    fig, ax = plt.subplots(figsize=(7.2, 4.0))
-    line_panel(ax, runs, field, title, ylabel, logy)
+    if len(runs) <= MAX_SERIES:
+        fig, ax = plt.subplots(figsize=(7.2, 4.0))
+        line_panel(ax, runs, field, title, ylabel, logy)
+    else:
+        ncol = min(4, len(runs))
+        nrow = (len(runs) + ncol - 1) // ncol
+        fig, axes = plt.subplots(nrow, ncol, figsize=(3.0 * ncol, 2.4 * nrow),
+                                 sharex=True, sharey=True, squeeze=False)
+        xmax = max(m["epoch"][-1] for _, m in runs)
+        for i, (label, m) in enumerate(runs):
+            ax = axes[i // ncol][i % ncol]
+            ax.plot(m["epoch"], m[field], lw=1.8, color=SERIES[0],
+                    solid_capstyle="round")
+            ax.set_title("  " + label, loc="left", color=INK, fontsize=10)
+            ax.set_xlim(0, xmax)
+            ax.tick_params(labelsize=8)
+            if logy:
+                ax.set_yscale("log")
+        for ax in axes.ravel()[len(runs):]:
+            ax.set_visible(False)
+        # a ragged grid leaves panels with nothing below them: give those the
+        # x axis, not just the nominal bottom row
+        for i in range(len(runs)):
+            if i + ncol >= len(runs):
+                ax = axes[i // ncol][i % ncol]
+                ax.set_xlabel("epoch", fontsize=9)
+                ax.tick_params(labelbottom=True, labelsize=8)
+        for row in axes:
+            row[0].set_ylabel(ylabel, fontsize=9)
+        fig.suptitle(title, x=0.005, ha="left", color=INK, fontsize=12,
+                     fontweight="bold")
+        fig.tight_layout(rect=[0, 0, 1, 0.95])
     if note:
         fig.text(0.01, -0.06, note, color=INK_2, fontsize=8)
-    fig.tight_layout()
     fig.savefig(out_path, bbox_inches="tight")
     plt.close(fig)
 
@@ -238,8 +277,9 @@ def main(argv=None):
     plot_series(runs, os.path.join(args.out, "high_order_entropy.png"),
                 "high_order_entropy",
                 "%s: high-order entropy" % tag,
-                "bits/byte  (H - zlib)",
-                note="entropy of the byte distribution minus zlib(9) bits per byte")
+                "bits/byte  (H - compressed)",
+                note="order-0 entropy of the byte distribution minus the "
+                     "compressed size (brotli quality 6, window 2^24)")
     plot_series(runs, os.path.join(args.out, "entropy_bits.png"),
                 "entropy_bits", "%s: order-0 entropy H" % tag,
                 "bits/byte",
