@@ -99,9 +99,9 @@ The reference result (Agüera y Arcas et al. 2024) uses a soup of **2^17 = 13107
 tapes** and reports that **40% of runs show a state transition within 16k
 epochs** — i.e. even at full scale, most runs do not transition in that window.
 16k epochs at 2^17 tapes is about **1.1e9 pairwise interactions**. The runs in
-the table above are between 10 and 100 times short of that budget, so finding
+the table above are well short of that budget, so finding
 no transition in them is the outcome the published numbers predict, not
-evidence of a broken interpreter.
+evidence of a broken interpreter: they fall 11× to 110× short.
 
 <!--SCALE-->
 
@@ -110,8 +110,9 @@ completion, just never reaching fixation: `<` is enriched to ~7% of memory
 against a random-soup level of 1/256 = 0.39% (18×) and `,` to ~2.5% (6×), while
 `+`, `-` and `]` stay at the random level. See
 `analysis/bff/byte_composition.png`. This is a stationary state, not a slow
-climb — over the 200k-epoch run `<` sits between 0.051 and 0.072 and `,`
-between 0.022 and 0.047 from epoch 40000 onwards, with no trend:
+climb — across all 33 memory dumps from epoch 40000 onwards `<` stays within
+0.039–0.079 and `,` within 0.011–0.050, with no trend (every 40000th dump
+shown):
 
 | epoch | 0 | 40000 | 80000 | 120000 | 160000 | 200000 |
 |---|---|---|---|---|---|---|
@@ -144,8 +145,18 @@ Final composition of memory (fraction of all 65536 bytes):
 
 `>`, `}`, `-`, `+`, `[` and `]` all end up **below** the 1/256 level they
 started at: they are actively purged. Mean steps per run settles at 128.2–128.8
-against a maximum of 8192 — a run now consists of walking forward through the
-window and falling off the far end, with no loops. The soup has become quiet.
+against a budget of 8192, and 98.7% of runs end by the instruction pointer
+running off the window (1.3% on an unmatched bracket, 0.0% on the step budget).
+129 steps is exactly a straight walk from `p` to the far edge: with the
+brackets gone there are no loops left to run, and the soup has become quiet.
+
+It is a patchwork rather than a uniform field. In final `ring_s1` memory the
+`<` runs average 8.7 bytes (longest 261, wider than the 257-byte window itself)
+and the `,` runs average 1.9 bytes (longest 89) — the solid-`,` blocks are what
+put `,,,,,,,,,,,,,,,,` second in the pattern log. That granularity is what the
+copy-fraction metric is measuring: 18.0% of 129-byte windows in the final
+memory contain no `,` at all, against a measured 18.3% of runs that executed no
+copy. The two numbers agreeing is a consistency check on both.
 
 **Is it a replicator?** `experiments/invasion.py` seeds half a ring with a
 candidate field and half with fresh uniform random bytes, switches mutation
@@ -158,7 +169,7 @@ in the half that started random:
 | synthetic 83% `<` + 11% `,` | 0.0038 | 0.0631 | 0.828 | spreads |
 | 83% `A` (no-op) + 11% `,` | 0.0041 | 0.0042 | 0.492 | does not spread, and decays |
 | 83% `<` + 11% `A` (no-op) | 0.0038 | 0.0216 | 0.798 | spreads ~3× slower |
-| 83% `>` + 11% `,` | 0.0042 | 0.0089 | 0.927 | barely spreads |
+| 83% `>` + 11% `,` | 0.0042 | 0.0089 | 0.927 | barely spreads (13× slower) |
 | 83% `{` + 11% `.` | 0.0037 | 0.0487 | 0.857 | spreads |
 
 So the state is genuinely self-propagating, two byte values are enough to
@@ -174,7 +185,7 @@ always `<` — into `memory[head0]`, and every `<` walks `head0` one cell
 of its own majority byte over whatever is behind it. The `>` arm of the
 experiment shows why the direction matters: `>` walks `head0` forward, into the
 code the instruction pointer is about to execute, and destroys the very run
-doing the copying — 7× weaker. `{`/`.` is the exact mirror (`.` writes to
+doing the copying — its growth above the starting level is 13× smaller. `{`/`.` is the exact mirror (`.` writes to
 `head1`, `{` walks `head1` backwards) and works exactly as well, which is why
 seed 2 found it. This is the simplest possible self-replicating structure the
 instruction set admits, and it is what an unstructured soup finds first.
@@ -311,7 +322,37 @@ Stated plainly, including the ones that turned out to be neither.
 
 ## Performance
 
-<!--PERF-->
+Measured on 4 cores of an Intel Xeon @ 2.80 GHz (Linux 6.18, Python 3.11.15,
+numpy 2.4.6, numba 0.67.0). Seeds are run as separate processes, so the
+wall-clock figures below include contention between them; `sim` is time inside
+the compiled kernel.
+
+**The target was 50k epochs of the default ring config in under an hour. It
+takes 142–149 seconds — about two and a half minutes, with three seeds running
+concurrently on four cores — so roughly 25× inside the budget.**
+
+| run | epochs | wall | sim | epochs/s |
+|---|---|---|---|---|
+| ring (M=65536, R=128), 3 seeds in parallel | 50000 | 142–149 s | 85–87 s | 336–352 |
+| ring, head-bound=halt, 3 seeds | 50000 | 125–126 s | 73–74 s | ~399 |
+| bff N=1024, 3 seeds in parallel | 20000 | 57–64 s | 30–36 s | 315–348 |
+| bff N=8192, 3 seeds in parallel | 20000 | 359 s | 181 s | 56 |
+| bff N=1024, single process | 200000 | 248 s | 228 s | 805 |
+
+`python -m soup.bench`, single process, measured on the *random* soup — the
+slowest phase for the ring, because random memory is full of brackets and runs
+average 1565 steps instead of the 129 they average once the soup has settled:
+
+```
+ring M=65536 R=128 k=8192     260 epochs/s    266k runs/s   4.2e8 steps/s
+bff  N=1024  k=8192          1264 epochs/s    647k runs/s   3.5e8 steps/s
+```
+
+Roughly 4e8 interpreted byte-machine steps per second per core, including the
+bracket scan, which is re-done on every executed bracket because self-modifying
+code means a precomputed jump table would be wrong. About 40% of the wall-clock
+in a ring run is metrics, not simulation: zlib level 9 plus two `np.unique`
+passes over ~65k windows at every snapshot.
 
 ---
 
