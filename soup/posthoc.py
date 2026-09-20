@@ -33,8 +33,9 @@ from .interp import run_region_full
 
 PAIR = 128
 TAPE = 64
-SAMPLES = 512
+SAMPLES = 1024
 CONSERVED_BITS = 2.0     # an offset counts as conserved below this entropy
+MIN_TAPES = 256          # fewest tapes an offset's entropy may be built from
 
 
 def _run_pair(buf, labels, k, visited, gen, heads_from_tape=True):
@@ -92,6 +93,10 @@ def self_sufficiency(mem, samples=SAMPLES, k=8192, seed=0,
         out[name] = {
             "copy_rate": round(float(copied.mean()), 6),
             "colonisation": round(float(colonised.mean()), 6),
+            # a single pair can hand over most of its 128 bytes, so the
+            # per-pair spread is wide and the mean needs its error quoted
+            "colonisation_sem": round(
+                float(colonised.std(ddof=1) / np.sqrt(samples)), 6),
             "mean_steps": round(float(steps.mean()), 2),
         }
     return out
@@ -114,7 +119,7 @@ def first_occurrence(ids, member_ids):
     return first
 
 
-def alignment_profile(mem, ids, member_ids, span=32):
+def alignment_profile(mem, ids, member_ids, span=32, min_tapes=MIN_TAPES):
     """Per-offset byte entropy across tapes aligned on the motif.
 
     Offsets run from -span to +span relative to the start of the first
@@ -129,7 +134,7 @@ def alignment_profile(mem, ids, member_ids, span=32):
     for i, off in enumerate(offsets):
         pos = first[rows] + off
         ok = (pos >= 0) & (pos < mem.shape[1])
-        if ok.sum() < 32:
+        if ok.sum() < min_tapes:
             continue
         vals = mem[rows[ok], pos[ok]]
         ent[i] = max(0.0, metrics.shannon_entropy_bits(vals))
@@ -153,9 +158,12 @@ def conserved_span(offsets, ent, bits=CONSERVED_BITS):
 
 FIELDS = ["epoch", "distinct_tapes",
           "leader_coverage", "leader_rep_hex",
-          "ss_copy_rate", "ss_colonisation", "ss_mean_steps",
+          "ss_copy_rate", "ss_colonisation", "ss_colonisation_sem",
+          "ss_mean_steps",
           "ctrl_soup_copy_rate", "ctrl_soup_colonisation",
+          "ctrl_soup_colonisation_sem",
           "ctrl_rand_copy_rate", "ctrl_rand_colonisation",
+          "ctrl_rand_colonisation_sem",
           "frac_bytes_in_motif", "H_inside", "H_outside",
           "conserved_lo", "conserved_hi", "conserved_width",
           "n_aligned_tapes"]
@@ -172,11 +180,15 @@ def snapshot_row(mem, epoch, samples=SAMPLES, k=8192, seed=0, span=32,
             np.ascontiguousarray(mem).view([("", np.uint8)] * 64)))),
         "ss_copy_rate": ss["soup_vs_random"]["copy_rate"],
         "ss_colonisation": ss["soup_vs_random"]["colonisation"],
+        "ss_colonisation_sem": ss["soup_vs_random"]["colonisation_sem"],
         "ss_mean_steps": ss["soup_vs_random"]["mean_steps"],
         "ctrl_soup_copy_rate": ss["soup_vs_soup"]["copy_rate"],
         "ctrl_soup_colonisation": ss["soup_vs_soup"]["colonisation"],
+        "ctrl_soup_colonisation_sem": ss["soup_vs_soup"]["colonisation_sem"],
         "ctrl_rand_copy_rate": ss["random_vs_random"]["copy_rate"],
         "ctrl_rand_colonisation": ss["random_vs_random"]["colonisation"],
+        "ctrl_rand_colonisation_sem":
+            ss["random_vs_random"]["colonisation_sem"],
     }
     if not fams:
         row.update({f: "" for f in FIELDS if f not in row})
@@ -233,7 +245,7 @@ def analyse(run_dir, out, samples=SAMPLES, k=8192, seed=0, span=32,
                                         row["conserved_width"]), flush=True)
     with open(out + "_profiles.json", "w") as fh:
         json.dump({"run": run_dir, "span": span, "samples": samples,
-                   "conserved_bits": CONSERVED_BITS,
+                   "conserved_bits": CONSERVED_BITS, "min_tapes": MIN_TAPES,
                    "profiles": profiles}, fh)
     return out + ".csv"
 
