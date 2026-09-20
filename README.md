@@ -83,9 +83,9 @@ Code and data are the same memory throughout.
 **Head confinement.** head0 and head1 wrap modulo the region length. A head
 move is therefore never a termination condition, which is what keeps the list
 above at exactly three items. This is an interpretation of "heads are confined
-to within ±R of p"; the alternative readings (clamp at the boundary, or
-terminate on out-of-bounds) would give a different interpreter, and it matters
-— see *Known limitations*.
+to within ±R of p"; `--head-bound halt` selects the other one, where a head
+move that would leave the region ends the run instead. Both readings share the
+same interpreter, and the ring results are the same under either (RESULTS.md).
 
 ### Mode `bff` — validation
 
@@ -189,11 +189,12 @@ measured figure is about two and a half minutes.
 
 ## Known limitations
 
-- **Head confinement is an interpretation.** Heads wrap modulo the region.
-  Under a "terminate on out-of-bounds head" rule the ring's dominant structure
-  (see `RESULTS.md`) could not exist in the same form, because it depends on
-  head0 walking backwards past the start of the window. This is the single
-  assumption most likely to change the results.
+- **Head confinement is an interpretation.** Heads wrap modulo the region by
+  default. The other reading is available as `--head-bound halt` and was
+  measured rather than assumed: the ring runs reach the same state at the same
+  time under either rule (`RESULTS.md`), so this assumption turns out not to be
+  load-bearing there. It has not been tested at length in bff mode, and the
+  reference implementation's rule is not stated in the material available here.
 - **High-order entropy does not see a monoculture.** `H - zlib` is near zero
   both for i.i.d. random bytes *and* for memory that has collapsed to one
   repeated byte, because in the second case the order-0 entropy has already

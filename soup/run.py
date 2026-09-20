@@ -55,16 +55,21 @@ class Soup:
         return self.mem.reshape(-1)
 
     def _plant(self, n):
+        """Overwrite n random sites with the hand-written replicator.
+
+        Validation only: it changes the initial condition, so a planted run is
+        not a sample of the process the rest of the results are about.  Sites
+        are drawn from a separate numpy generator seeded from cfg.seed, leaving
+        the simulation's own stream untouched.
+        """
         prog = replicator.as_array()
-        flat = self.flat
+        picker = np.random.default_rng(self.cfg.seed)
         for _ in range(n):
             if self.cfg.mode == "ring":
-                p = int(np.random.default_rng(self.cfg.seed + _).integers(self.cfg.M))
-                idx = (p + np.arange(prog.size)) % self.cfg.M
-                flat[idx] = prog
+                p = int(picker.integers(self.cfg.M))
+                self.flat[(p + np.arange(prog.size)) % self.cfg.M] = prog
             else:
-                t = int(np.random.default_rng(self.cfg.seed + _).integers(self.cfg.N))
-                self.mem[t, : prog.size] = prog
+                self.mem[int(picker.integers(self.cfg.N)), : prog.size] = prog
 
     def advance(self, n_epochs):
         """Run n_epochs, accumulating stats.  Returns seconds spent simulating."""
@@ -173,14 +178,15 @@ def main(argv=None):
 
         base = snapshot()["high_order_entropy"]   # epoch 0: random condition
         dump_tape()
-        streak, stop_at = 0, cfg.epochs
+        streak, stop_at, detected = 0, cfg.epochs, False
         while soup.epoch < stop_at:
             n = min(cfg.snapshot_interval, stop_at - soup.epoch)
             soup.advance(n)
             row = snapshot()
-            if cfg.stop_after_takeover and stop_at == cfg.epochs:
+            if cfg.stop_after_takeover and not detected:
                 streak = streak + 1 if row["high_order_entropy"] >= base + HOE_RISE else 0
                 if streak >= SUSTAIN:
+                    detected = True
                     stop_at = min(cfg.epochs,
                                   soup.epoch + cfg.stop_after_takeover)
                     print("takeover detected at epoch %d; running to %d"

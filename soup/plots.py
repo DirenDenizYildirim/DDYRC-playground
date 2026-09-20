@@ -219,10 +219,14 @@ def main(argv=None):
     os.makedirs(args.out, exist_ok=True)
 
     import json
-    loaded = []
-    for d in args.runs:
-        cfg = json.load(open(os.path.join(d, "config.json")))
-        loaded.append(("seed %d" % cfg["seed"], read_metrics(d), d, cfg))
+    cfgs = [json.load(open(os.path.join(d, "config.json"))) for d in args.runs]
+    seeds = [c["seed"] for c in cfgs]
+    # "seed N" reads better, but falls back to the run's own name when two
+    # runs in the same figure share a seed (e.g. a wrap/halt comparison)
+    labels = (["seed %d" % s for s in seeds] if len(set(seeds)) == len(seeds)
+              else [os.path.basename(d.rstrip("/")) for d in args.runs])
+    loaded = [(lab, read_metrics(d), d, cfg)
+              for lab, d, cfg in zip(labels, args.runs, cfgs)]
 
     runs = [(lab, m) for lab, m, _, _ in loaded]
     tag = args.label or loaded[0][3]["mode"]
@@ -244,11 +248,11 @@ def main(argv=None):
                      os.path.join(args.out, "byte_composition.png"),
                      "%s: instruction-byte composition of memory" % tag)
     for lab, _, d, cfg in loaded:
-        plot_kymograph(d, os.path.join(args.out, "kymograph_%s.png"
-                                       % lab.replace(" ", "")),
+        tag_l = lab.replace(" ", "")
+        plot_kymograph(d, os.path.join(args.out, "kymograph_%s.png" % tag_l),
                        cfg["snapshot_interval"],
-                       raw_path=os.path.join(args.out, "kymograph_%s_raw.png"
-                                             % lab.replace(" ", "")))
+                       raw_path=os.path.join(args.out,
+                                             "kymograph_%s_raw.png" % tag_l))
     print("wrote plots to", args.out)
     return 0
 
