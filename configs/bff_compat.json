@@ -1,8 +1,19 @@
 {
-  "mode": "bff", "compat": "cubff", "N": 32768, "k": 8192,
+  "mode": "bff",
+  "compat": "cubff",
+  "N": 32768,
+  "k": 8192,
   "mu": 0.000244140625,
-  "epochs": 64000, "snapshot_interval": 250, "tape_dump_interval": 8000,
-  "stop_after_takeover": 2000,
-  "window_size": 8, "c_min": 8, "tau_epochs": 1000, "null_ratio": 5.0,
-  "compressor": "brotli6", "top_window": 16, "top_k": 10, "kymo_width": 4096
+  "epochs": 64000,
+  "snapshot_interval": 250,
+  "tape_dump_interval": 1000,
+  "stop_after_takeover": 500,
+  "window_size": 8,
+  "c_min": 8,
+  "tau_epochs": 1000,
+  "null_ratio": 5.0,
+  "compressor": "brotli6",
+  "top_window": 16,
+  "top_k": 10,
+  "kymo_width": 4096
 }

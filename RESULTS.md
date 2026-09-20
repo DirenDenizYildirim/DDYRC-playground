@@ -342,50 +342,119 @@ same starting point, and loops are exactly what this soup purges.
 
 ---
 
-## What high-order entropy misses
+## What the metrics missed, and what changed
 
-`H - zlib` is near zero for i.i.d. random bytes **and** near zero for memory
-that has collapsed to one repeated byte, because in the second case the order-0
-entropy has already fallen to meet the compressed size. In the ring runs it
-spikes to ~1.0–1.4 bits/byte *during* the transition, when structured and
-unstructured memory coexist, and then falls back to 0.035 in seed 1 — a value
-indistinguishable from the random initial condition, describing a soup that
-could not be more different from it.
+Three of the four metrics in the first version of this baseline were
+misleading, in ways the runs made obvious. All four were replaced; the old
+columns are kept beside the new ones so the change can be audited.
 
-So the metric the brief nominates as the takeover signal is, in this soup, a
-detector of the *transition* and not of the *state*. `entropy_bits` has to be
-read next to it: 8.0 means random, ~1.3 means monoculture, and high-order
-entropy alone cannot tell them apart. The planted-replicator control shows the
-case high-order entropy is genuinely good at — many copies of a long,
-byte-diverse pattern, which keeps `H` at 5.9 while `zlib` collapses to 0.33.
+### 1. High-order entropy is blind to a monoculture — so H is always beside it
 
-## What A(t) misses
+`H - C` is near zero for i.i.d. random bytes **and** near zero for memory that
+has collapsed to one repeated byte, because in the second case the order-0
+entropy has already fallen to meet the compressed size.
 
-A(t) rises monotonically in every run and never flattens: in the ring it adds
-~72 new persistent windows per 1000 epochs over the first half and still ~16
-per 1000 over the second half, at epoch 50000, in a soup made of two byte
-values. Two reasons, both of which are measurement artifacts:
+| state | H | compressed | HOE |
+|---|---|---|---|
+| random bytes | 7.997 | 8.000 | −0.003 |
+| ring crystal (seed 1, epoch 50000) | 1.279 | 1.273 | 0.006 |
+| planted replicator at fixation | 5.883 | 0.341 | 5.542 |
+| emergent cubff replicator at fixation | 6.578 | 1.523 | 5.749 |
 
-1. **Combinatorics of a small alphabet.** With `<` at 0.82 and `,` at 0.11,
-   the expected count of an 8-byte window containing *j* `,` bytes is
-   65536 × 0.82^(8−j) × 0.11^j, which stays above `c_min` = 8 up to j = 3 —
-   93 windows before anything else is counted. Fluctuation and the ±1
-   neighbours that `+`/`-` and mutation produce (`;`, `=`) supply the rest.
-   57% (seed 1) to 74% (seed 2) of the windows persistent at the end are built
-   only from `< , { .`.
-2. **`tau` is counted in snapshots, not epochs.** The same bff configuration
-   logged every 20 epochs reaches A(t) = 547, and logged every 200 epochs
-   reaches A(t) = 262 — a factor of two from the logging cadence alone
-   (`bff_s1` vs `bff_long_s1`, which is also 10× longer). The cadence also
-   decides whether A(t) *appears* to plateau: at a 200-epoch cadence the
-   N=32768 runs slow from 15 new windows per 1000 epochs in their first half
-   to 2.4 in their second, which reads as a plateau, while the ring runs at a
-   50-epoch cadence are still adding 16 per 1000 at epoch 50000. Nothing about
-   the soups explains that difference; the logging interval does.
+The first two rows are indistinguishable on HOE and could not be more
+different. `entropy_bits` is now a required companion column, and the
+end-state classifier below uses both.
 
-A(t) as specified answers "how many distinct 8-byte windows have ever been
-abundant for a while", and that question has a large answer in a soup with a
-two-letter alphabet. It is not a novelty measure in this regime.
+### 2. zlib's 32 KiB window is too small — now brotli with a 16 MiB window
+
+zlib cannot see a repeat spanning more than half of a 64 KiB ring, so it
+over-estimates the code length for exactly the soups that matter.
+`comp_bits` is now brotli quality 6 with `lgwin=24`; `brotli2_bits` (cubff's
+own setting) and `zlib_bits` are logged alongside.
+
+Quality matters more than expected. At quality 2 — what cubff reports — brotli
+compresses the ring crystal to 1.390 bits/byte, *worse* than its 1.279 bits of
+order-0 entropy, which would make high-order entropy negative. Quality 6 gives
+1.273. Quality 11 gives 1.151 but costs 7.6 s on a 2 MiB soup against 55 ms,
+so it is available and not the default.
+
+### 3. A(t)'s `tau` counted snapshots — now epochs
+
+The same bff configuration logged every 20 epochs scored A(t) = 547 and logged
+every 200 epochs scored 262. That factor of two came from the logging cadence
+and nothing else. `tau_epochs` (default 250) replaces it, and
+`tests/test_metrics.py` asserts that the same history sampled at two cadences
+gives the same A(t).
+
+### 4. A(t) counted combinatorics — now filtered against an i.i.d. null
+
+A window counts only if its multiplicity is at least `c_min` **and** at least
+5× what an i.i.d. model with the soup's *current* byte frequencies predicts.
+In a soup that is 82% `<`, a window of eight `<` occurs about 13400 times by
+chance; the old A(t) counted every such arrangement as a discovery.
+
+Re-scored with both rules, on each run's stored memory dumps
+(`python -m soup.rescore`, `tau_epochs = 1000`, `null_ratio = 5`):
+
+| run | H | brotli6 | HOE | A(t) filtered | A(t) naive | filter cuts |
+|---|---|---|---|---|---|---|
+| ring_s1 | 1.279 | 1.273 | 0.006 | 220 | 741 | 70% |
+| ring_s2 | 2.120 | 1.156 | 0.965 | 740 | 788 | 6% |
+| ring_s3 | 1.280 | 1.265 | 0.015 | 250 | 765 | 67% |
+| ring_halt_s1 | 1.165 | 1.168 | −0.003 | 300 | 896 | 67% |
+| ring_halt_s2 | 1.245 | 1.219 | 0.027 | 491 | 845 | 42% |
+| ring_halt_s3 | 1.308 | 1.262 | 0.047 | 224 | 773 | 71% |
+| bff_s1 | 7.517 | 7.394 | 0.123 | 84 | 84 | 0% |
+| bff_s2 | 7.397 | 7.223 | 0.174 | 98 | 98 | 0% |
+| bff_s3 | 7.392 | 7.220 | 0.172 | 84 | 84 | 0% |
+| bff_n8192_s1–3 | 7.51–7.53 | 7.22–7.26 | 0.27–0.29 | 272–277 | 272–277 | 0% |
+| bff_n32768_s1–3 | 7.49–7.53 | 7.23–7.29 | 0.24–0.28 | 367–374 | 367–374 | 0% |
+| bff_long_s1 | 7.490 | 7.088 | 0.402 | 121 | 121 | 0% |
+
+The filter removes 42–71% of the crystal runs' A(t) and **nothing at all** from
+the bff runs, whose byte distributions are still near-uniform so the null model
+predicts essentially zero for every window. That is the intended behaviour: it
+is a filter against a *biased alphabet*, not against structure.
+
+Two honest caveats. The rescored numbers use the tape-dump cadence, which is
+20× coarser than the metric cadence, so they are comparable with each other and
+not with the live `A_t` column. And the null model is i.i.d., so it knows the
+soup's letter frequencies but not its spatial structure: a field of clustered
+`,` runs still scores as novel. That is arguably correct — the clustering *is*
+non-i.i.d. structure — but it is not a program either, which is what the
+classifier is for.
+
+### 5. New: what the machine actually did
+
+`frac_steps_in_loop` is the fraction of executed steps at an instruction
+pointer the run had already visited — time spent re-running code. It is
+defined on addresses rather than brackets so that loops built by
+self-modification count too. `ops_per_run` counts executed instructions
+excluding no-ops, which is the quantity cubff reports as "ops".
+
+These separate two states that the entropy metrics conflate. A ring crystal
+and a random soup both sit near HOE = 0, but a random soup spends 80–90% of
+its steps re-running code (random memory is full of brackets) while a crystal
+spends ~1% (the brackets have been purged and every run is a straight walk).
+
+### The end-state classifier
+
+Every finished run is labelled from the median of its last five snapshots,
+with these thresholds applied identically to all of them:
+
+| class | rule |
+|---|---|
+| **program** | HOE ≥ 1.0 **and** mean steps ≥ 3 × walk length **and** the most frequent 16-byte window contains a bracket |
+| **crystal** | H < 3.0 **and** in-loop fraction < 0.10 **and** mean steps ≤ 1.5 × walk length |
+| **random** | H ≥ 7.0 **and** HOE < 0.5 |
+| **mixed** | none of the above |
+
+"Walk length" is the number of steps a run takes if it executes only no-ops:
+`R+1` for ring, 128 for bff and blocks, 126 for cubff compat (its pc starts at
+2). Mean steps well above it is the signature of loops actually running. The
+bracket requirement is what separates a program from a crystal that happens to
+be compressible: a dominant pattern with no control flow in it is not a
+program, however abundant.
 
 ---
 

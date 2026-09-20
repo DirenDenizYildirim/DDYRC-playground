@@ -1,0 +1,6 @@
+{
+  "stopped_by": "operator",
+  "reason": "transition was unambiguous and post-transition epochs cost ~20x more; stopped to free cores for more seeds",
+  "last_complete_epoch": 3750,
+  "note": "metrics.csv is complete up to that epoch; there is no summary.json and no final tape dump"
+}

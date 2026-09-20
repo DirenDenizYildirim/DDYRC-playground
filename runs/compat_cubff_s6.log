@@ -1,0 +1,6 @@
+epoch       0  HO=-0.0001  meanSteps=     0.0  copy=0.000  A(t)=0  sim=0.0s
+epoch     250  HO=0.0800  meanSteps=   806.3  copy=0.564  A(t)=0  sim=12.8s
+epoch     500  HO=0.0810  meanSteps=   810.6  copy=0.687  A(t)=0  sim=26.9s
+epoch     750  HO=0.0936  meanSteps=   801.0  copy=0.765  A(t)=0  sim=40.1s
+epoch    1000  HO=0.1197  meanSteps=   827.4  copy=0.790  A(t)=0  sim=53.7s
+epoch    1250  HO=0.1345  meanSteps=   884.1  copy=0.785  A(t)=201  sim=68.8s

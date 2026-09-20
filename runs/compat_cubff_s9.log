@@ -15,3 +15,5 @@ epoch    3250  HO=5.6137  meanSteps=  8173.0  copy=0.999  A(t)=289  sim=427.8s
 epoch    3500  HO=5.6361  meanSteps=  8172.1  copy=0.999  A(t)=289  sim=539.5s
 epoch    3750  HO=5.7058  meanSteps=  8170.5  copy=0.999  A(t)=939  sim=636.8s
 takeover detected at epoch 3750; running to 5750
+epoch    4000  HO=5.7214  meanSteps=  8171.2  copy=0.999  A(t)=1307  sim=735.6s
+Terminated

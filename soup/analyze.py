@@ -114,24 +114,45 @@ def _tail(m, key, n=CLASS_TAIL):
     return float(np.median(m[key][-min(n, m[key].size):]))
 
 
-def top_pattern_bytes(run_dir):
-    """The most frequent window in the last block of patterns.log, as bytes."""
+def top_patterns(run_dir, tail=CLASS_TAIL):
+    """Top windows from the last ``tail`` blocks of patterns.log, as bytes.
+
+    The tail, not just the final block: a program takeover's single most
+    frequent window is often a run of one padding byte even while the program
+    itself is everywhere, so one snapshot is a noisy view of what dominates.
+    """
     try:
         with open(os.path.join(run_dir, "patterns.log")) as fh:
             lines = fh.read().splitlines()
     except OSError:
-        return b""
+        return []
     starts = [i for i, l in enumerate(lines) if l.startswith("#")]
-    if not starts or starts[-1] + 1 >= len(lines):
-        return b""
-    parts = lines[starts[-1] + 1].split()
-    try:
-        return bytes.fromhex(parts[-1])
-    except ValueError:
-        return b""
+    out = []
+    for b in starts[-tail:]:
+        for line in lines[b + 1:]:
+            if line.startswith("#"):
+                break
+            try:
+                out.append(bytes.fromhex(line.split()[-1]))
+            except (ValueError, IndexError):
+                pass
+    return out
 
 
-def classify(m, walk_len, top_bytes):
+CODE_LIKE_DISTINCT = 4   # distinct byte values a window needs to look like code
+
+
+def looks_like_code(windows):
+    """True if some dominant window carries control flow and real variety.
+
+    A run of one byte is not code even when that byte is '['; a window needs a
+    bracket *and* several distinct values before it counts as a program body.
+    """
+    return any(set(w) & BRACKETS and len(set(w)) >= CODE_LIKE_DISTINCT
+               for w in windows)
+
+
+def classify(m, walk_len, windows):
     """Label a finished run: random, crystal, program, or mixed."""
     h = _tail(m, "entropy_bits")
     hoe = _tail(m, "high_order_entropy")
@@ -141,9 +162,10 @@ def classify(m, walk_len, top_bytes):
         return "unknown", {}
     facts = {"H": h, "HOE": hoe, "mean_steps": steps, "frac_loop": loop,
              "walk_len": walk_len,
-             "top_has_bracket": bool(set(top_bytes) & BRACKETS)}
+             "code_like_pattern": looks_like_code(windows)}
     if (hoe >= PROGRAM_HOE and steps is not None
-            and steps >= PROGRAM_STEPS * walk_len and facts["top_has_bracket"]):
+            and steps >= PROGRAM_STEPS * walk_len
+            and facts["code_like_pattern"]):
         return "program", facts
     if (h < CRYSTAL_H and (loop is None or loop < CRYSTAL_LOOP)
             and (steps is None or steps <= CRYSTAL_STEPS * walk_len)):
@@ -155,7 +177,9 @@ def classify(m, walk_len, top_bytes):
 
 def analyse(run_dir):
     cfg = json.load(open(os.path.join(run_dir, "config.json")))
-    summary = json.load(open(os.path.join(run_dir, "summary.json")))
+    spath = os.path.join(run_dir, "summary.json")
+    # a run stopped by hand has metrics but no summary; report what it has
+    summary = json.load(open(spath)) if os.path.exists(spath) else {}
     m = read_metrics(run_dir)
     rescored_path = os.path.join(run_dir, "rescored.csv")
     if os.path.exists(rescored_path):
@@ -172,7 +196,7 @@ def analyse(run_dir):
     walk = summary.get("walk_len")
     if walk is None:
         walk = cfg["R"] + 1 if cfg["mode"] == "ring" else 128
-    d["klass"], facts = classify(m, walk, top_pattern_bytes(run_dir))
+    d["klass"], facts = classify(m, walk, top_patterns(run_dir))
     d["class_facts"] = facts
     d["frac_steps_in_loop"] = _tail(m, "frac_steps_in_loop")
     d["compat"] = cfg.get("compat", "none")
@@ -180,9 +204,10 @@ def analyse(run_dir):
         d["A_t_rescored"] = int(m["A_t_rescored"][-1])
         d["A_t_naive_rescored"] = int(m["A_t_naive_rescored"][-1])
         d["hoe_rescored"] = round(float(m["high_order_entropy_rescored"][-1]), 4)
-    d["wall_seconds"] = summary["wall_seconds"]
-    d["sim_seconds"] = summary["sim_seconds"]
-    d["epochs_per_second"] = summary["epochs_per_second"]
+    d["wall_seconds"] = summary.get("wall_seconds")
+    d["sim_seconds"] = summary.get("sim_seconds")
+    d["epochs_per_second"] = summary.get("epochs_per_second")
+    d["complete"] = bool(summary)
     d["patterns"] = final_patterns(run_dir)
     return d
 

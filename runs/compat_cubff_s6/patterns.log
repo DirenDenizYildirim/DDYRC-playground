@@ -1,0 +1,66 @@
+# epoch 0  H=7.9999 C=8.0025 HO=-0.0001  A(t)=0
+         1  ....r..sJ..E@...  fffff79b72a5f0734aaf01454095cfcc
+         1  .....3.,.....fP7  fffff11ffc331a2c10d2f1fabd665037
+         1  .....#..js.j...v  ffffccb6002391876a73d36a11da8a76
+         1  ......~b...;c-9.  ffffc5ecfae17e6292d7c03b632d39d3
+         1  ....4......L..}D  ffffacb934e6d015c601c64cfcf97d44
+         1  ....Q.B.!.:/...G  ffffabc851cd42f521833a2f1cbeb647
+         1  .....@.:...we.7O  ffffa68cea40d53a1ed8ed7765b0374f
+         1  ...p.c"....&.{..  ffffa170aa6322858e2e1526c37b00c1
+         1  ...LfC[.af...VN.  ffff9b4c66435ba96166bfbea2564ef7
+         1  ..}..-....R.._qY  ffff7ddcc92dbeedcd8152c504207159
+# epoch 250  H=7.9883 C=7.8826 HO=0.0800  A(t)=0
+       237  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       160  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       131  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       109  ................  adadadadadadadadadadadadadadadad
+       104  ................  8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f
+        89  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+        77  ................  03030303030303030303030303030303
+        73  ................  d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7
+        70  ................  1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b
+        69  ................  babababababababababababababababa
+# epoch 500  H=7.9628 C=7.8287 HO=0.0810  A(t)=0
+       362  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       316  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       239  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       193  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+       110  ................  1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c
+        89  ................  08080808080808080808080808080808
+        84  ................  f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8
+        76  ................  dededededededededededededededede
+        71  hhhhhhhhhhhhhhhh  68686868686868686868686868686868
+        67  ................  e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9
+# epoch 750  H=7.9347 C=7.7824 HO=0.0936  A(t)=0
+       548  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       424  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       217  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       184  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+       145  ................  06060606060606060606060606060606
+       143  ................  90909090909090909090909090909090
+        87  ................  ffffffffffffffffffffffffffffffff
+        87  KKKKKKKKKKKKKKKK  4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b
+        82  ................  04040404040404040404040404040404
+        81  YYYYYYYYYYYYYYYY  59595959595959595959595959595959
+# epoch 1000  H=7.9072 C=7.7212 HO=0.1197  A(t)=0
+       481  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       436  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       338  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       169  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+       118  ................  fdfdfdfdfdfdfdfdfdfdfdfdfdfdfdfd
+       109  PPPPPPPPPPPPPPPP  50505050505050505050505050505050
+        98  ................  8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f
+        98  CCCCCCCCCCCCCCCC  43434343434343434343434343434343
+        97  ................  e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6
+        91  ................  c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3
+# epoch 1250  H=7.8816 C=7.6780 HO=0.1345  A(t)=201
+       459  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       452  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       393  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       349  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+       110  ................  e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4e4
+       107  ................  12121212121212121212121212121212
+       106  SSSSSSSSSSSSSSSS  53535353535353535353535353535353
+        94  JJJJJJJJJJJJJJJJ  4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a
+        93  ||||||||||||||||  7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c
+        86  0000000000000000  30303030303030303030303030303030
