@@ -25,6 +25,11 @@ with cubff's initial machine state.** Nothing else tested does.
 | ring, no copy primitive | 3 | 0 → *random* | 0.00 (0.00–0.56) |
 | ring, with insertions and deletions | 3 | 0 → *crystal* | 0.00 (0.00–0.56) |
 
+Counts are of distinct experiments, not run directories: `ringv_ctrl_*` and
+`bffnew_*` re-run the original ring and bff configurations under the new
+metrics at the same seeds, and are not counted twice. The full inventory is at
+the end.
+
 **`--compat cubff` at N = 32768 is therefore the baseline to build on.** It is
 the only configuration here where something that computes takes over, it does
 so within 2000–11250 epochs, and it is reproducible bit-for-bit against the
@@ -658,6 +663,45 @@ bracket scan, which is re-done on every executed bracket because self-modifying
 code means a precomputed jump table would be wrong. About 40% of the wall-clock
 in a ring run is metrics, not simulation: zlib level 9 plus two `np.unique`
 passes over ~65k windows at every snapshot.
+
+---
+
+## Run inventory
+
+Every run directory holds `config.json`, `metrics.csv` (one row per snapshot),
+`patterns.log` (top-10 16-byte windows per snapshot, printable and hex),
+`summary.json` and raw `.npy` memory dumps. Runs stopped by hand carry
+`stopped_early.json` instead of a summary, saying why and at which epoch.
+Runs made before the metric changes also carry `rescored.csv`.
+
+| directories | mode | N or M | variant | seeds | epochs |
+|---|---|---|---|---|---|
+| `bff_s*` | bff | 1024 | — | 3 | 20000 |
+| `bff_long_s*` | bff | 1024 | — | 1 | 200000 |
+| `bff_n32768_s*` | bff | 32768 | — | 3 | 64000 |
+| `bff_n8192_s*` | bff | 8192 | — | 3 | 20000 |
+| `bff_plant_s*` | bff | 1024 | 1 planted | 1 | 2000 |
+| `bff_plant20_s*` | bff | 1024 | 20 planted | 1 | 400 |
+| `bffnew_s*` | bff | 1024 | — | 3 | 20000 |
+| `blocks_d1_s*` | blocks | 8192 | d=1 | 3 | 20000 |
+| `blocks_d2_s*` | blocks | 8192 | d=2 | 5 | 20000 |
+| `blocks_d8_s*` | blocks | 8192 | d=8 | 3 | 20000 |
+| `compat_cubff_s*` | bff | 32768 | cubff | 17 | 64000 |
+| `compat_noheads_s*` | bff | 32768 | cubff_noheads | 7 | 16000 |
+| `ring_s*` | ring | 65536 | — | 3 | 50000 |
+| `ring_halt_s*` | ring | 65536 | head-bound=halt | 3 | 50000 |
+| `ringv_ctrl_s*` | ring | 65536 | — | 3 | 50000 |
+| `ringv_indel_s*` | ring | 65536 | indel | 3 | 50000 |
+| `ringv_nocopy_s*` | ring | 65536 | no-copy | 3 | 50000 |
+
+The `compat_cubff_*` row shows the `epochs` field of its config, which was
+64000 for the first five seeds before the budget was fixed at 16000. **Every
+compat seed is scored over the same 16000-epoch window**: the later ones stop
+there by configuration, the earlier ones were stopped there by the supervisor
+in `stopped_early.json`, and no seed transitioned between 16000 and wherever
+it was stopped. `bff_n32768_*` ran the full 64000 epochs and is reported as
+its own row in the rate table, not pooled into the 16000-epoch comparison
+except where the text says so explicitly.
 
 ---
 
