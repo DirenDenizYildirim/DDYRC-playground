@@ -1,0 +1,11 @@
+{
+  "a": "runs/plateau_s14/snapshots/epoch_00015000.npy",
+  "b": "runs/plateau_s14/snapshots/epoch_00010000.npy",
+  "n": 8192,
+  "epochs": 300,
+  "every": 10,
+  "reps": 5,
+  "seed0": 1000,
+  "mu": 0.000244140625,
+  "k": 8192
+}

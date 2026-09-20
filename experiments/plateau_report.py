@@ -35,10 +35,70 @@ def finals(path, field="frac_bytes_a"):
 
 def band(values):
     v = np.asarray(values, dtype=float)
+    sd = float(v.std(ddof=1)) if v.size > 1 else float("nan")
     return {"mean": round(float(v.mean()), 5),
+            "sd": round(sd, 5),
+            "sem": round(sd / np.sqrt(v.size), 5) if v.size > 1 else None,
             "min": round(float(v.min()), 5),
             "max": round(float(v.max()), 5),
-            "n": int(v.size)}
+            "n": int(v.size),
+            "values": [round(float(x), 5) for x in v]}
+
+
+def welch(a, b):
+    """Welch's t and a two-sided p, without scipy.
+
+    Replicate-to-replicate drift in this assay is large (a self-control can
+    land anywhere in 0.45-0.55), so comparing ranges is far too conservative
+    and comparing means needs the spread carried with it.
+    """
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    if a.size < 2 or b.size < 2:
+        return None, None, None
+    va, vb = a.var(ddof=1) / a.size, b.var(ddof=1) / b.size
+    if va + vb <= 0:
+        return None, None, None
+    t = (a.mean() - b.mean()) / np.sqrt(va + vb)
+    df = (va + vb) ** 2 / (va ** 2 / (a.size - 1) + vb ** 2 / (b.size - 1))
+    # two-sided p from the t distribution via the regularised incomplete beta
+    from math import lgamma
+    x = df / (df + t * t)
+
+    def betacf(aa, bb, xx):
+        qab, qap, qam = aa + bb, aa + 1.0, aa - 1.0
+        c, d = 1.0, 1.0 - qab * xx / qap
+        d = 1.0 / (d if abs(d) > 1e-30 else 1e-30)
+        h = d
+        for m in range(1, 200):
+            m2 = 2 * m
+            aa1 = m * (bb - m) * xx / ((qam + m2) * (aa + m2))
+            d = 1.0 + aa1 * d
+            d = 1.0 / (d if abs(d) > 1e-30 else 1e-30)
+            c = 1.0 + aa1 / (c if abs(c) > 1e-30 else 1e-30)
+            h *= d * c
+            aa1 = -(aa + m) * (qab + m) * xx / ((aa + m2) * (qap + m2))
+            d = 1.0 + aa1 * d
+            d = 1.0 / (d if abs(d) > 1e-30 else 1e-30)
+            c = 1.0 + aa1 / (c if abs(c) > 1e-30 else 1e-30)
+            delta = d * c
+            h *= delta
+            if abs(delta - 1.0) < 3e-12:
+                break
+        return h
+
+    def betainc(aa, bb, xx):
+        if xx <= 0:
+            return 0.0
+        if xx >= 1:
+            return 1.0
+        lb = (lgamma(aa + bb) - lgamma(aa) - lgamma(bb)
+              + aa * np.log(xx) + bb * np.log(1 - xx))
+        if xx < (aa + 1) / (aa + bb + 2):
+            return np.exp(lb) * betacf(aa, bb, xx) / aa
+        return 1 - np.exp(lb) * betacf(bb, aa, 1 - xx) / bb
+
+    p = float(betainc(df / 2.0, 0.5, x))
+    return round(float(t), 3), round(p, 5), round(float(df), 2)
 
 
 def gather_seed(assay_dir):
@@ -56,18 +116,28 @@ def gather_seed(assay_dir):
     ctrl = [v for c in out["controls"].values() for v in (c["min"], c["max"])]
     out["control_band"] = ([round(min(ctrl), 5), round(max(ctrl), 5)]
                            if ctrl else None)
+    out["control_values"] = [v for c in out["controls"].values()
+                             for v in c["values"]]
     return out
 
 
-def verdict(entry, control_band):
-    """Does this comparison leave the neutral band?"""
+def verdict(entry, control_band, control_values=None, alpha=0.05):
+    """Two readings: the conservative range test, then Welch against control.
+
+    The range test asks whether every replicate beat every control
+    replicate; with five replicates and this much drift it almost never
+    fires, so the t-test against the pooled controls is the one to read.
+    """
     if control_band is None:
-        return "no control"
-    if entry["min"] > control_band[1]:
-        return "later wins"
-    if entry["max"] < control_band[0]:
-        return "earlier wins"
-    return "inside the band"
+        return "no control", None, None
+    if control_values:
+        t, p, _df = welch(entry["values"], control_values)
+        if p is not None and p < alpha:
+            return ("later wins (p=%.3g)" % p if t > 0
+                    else "earlier wins (p=%.3g)" % p), t, p
+        return ("no difference (p=%.3g)" % p if p is not None
+                else "no control"), t, p
+    return "inside the band", None, None
 
 
 def md_table(rows, headers):
@@ -98,20 +168,30 @@ def main(argv=None):
         g = gather_seed(d)
         summary[tag] = g
         cb = g["control_band"]
+        cv = g["control_values"]
         rows = []
         for epoch in sorted(g["vs_first"]):
             e = g["vs_first"][epoch]
-            p = g["vs_prev"].get(epoch)
-            rows.append([epoch, "%.4f" % e["mean"],
-                         "%.4f-%.4f" % (e["min"], e["max"]),
-                         verdict(e, cb),
-                         "%.4f" % p["mean"] if p else "-",
-                         verdict(p, cb) if p else "-"])
+            pv = g["vs_prev"].get(epoch)
+            ve, te, pe = verdict(e, cb, cv)
+            e["welch_t"], e["welch_p"] = te, pe
+            if pv:
+                vp, tp, pp = verdict(pv, cb, cv)
+                pv["welch_t"], pv["welch_p"] = tp, pp
+            rows.append([epoch, "%.4f +/- %.4f" % (e["mean"], e["sem"] or 0),
+                         ve,
+                         "%.4f +/- %.4f" % (pv["mean"], pv["sem"] or 0)
+                         if pv else "-",
+                         vp if pv else "-"])
+        ctrl_mean = float(np.mean(cv)) if cv else float("nan")
+        ctrl_sd = float(np.std(cv, ddof=1)) if len(cv) > 1 else float("nan")
         md += ["## seed %d" % seed, "",
-               "neutral band from the two self-controls: %s" %
-               ("%.4f - %.4f" % tuple(cb) if cb else "not measured"), "",
-               md_table(rows, ["epoch", "vs first (mean)", "vs first (range)",
-                               "verdict", "vs previous (mean)", "verdict"]),
+               "self-control (A against A), %d replicates: mean %.4f, sd %.4f, "
+               "range %.4f-%.4f" % (len(cv), ctrl_mean, ctrl_sd,
+                                    min(cv) if cv else float("nan"),
+                                    max(cv) if cv else float("nan")), "",
+               md_table(rows, ["epoch", "vs first (mean +/- sem)", "verdict",
+                               "vs previous (mean +/- sem)", "verdict"]),
                ""]
         items = [(os.path.join(d, "vs_first_%08d.csv" % e), "epoch %d" % e)
                  for e in sorted(g["vs_first"])]
