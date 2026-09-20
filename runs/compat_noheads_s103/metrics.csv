@@ -1,0 +1,3 @@
+epoch,wall_s,sim_s,entropy_bits,comp_bits,high_order_entropy,brotli2_bits,zlib_bits,hoe_zlib,mean_steps,frac_copy_runs,frac_steps_in_loop,ops_per_run,frac_term_budget,frac_term_off_region,frac_term_unmatched,runs,steps,mutations,distinct_windows,n_persistent,A_t,n_persistent_naive,A_t_naive
+0,2.078,0.0,7.999923,8.000019,-9.6e-05,8.000019,8.002464,-0.002542,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0,0,0,1867776,0,0,0,0
+250,18.871,14.972,7.995909,7.67931,0.316599,7.746994,7.666714,0.329195,547.3824,0.498719,0.823974,81.2123,0.053477,0.60535,0.341173,4096000,2242078142,128085,1790864,0,0,0,0

@@ -280,9 +280,16 @@ def main(argv=None):
     ap.add_argument("--json")
     ap.add_argument("--rates", action="store_true",
                     help="also report the program-class rate per configuration")
+    ap.add_argument("--finished-only", action="store_true",
+                    help="skip runs that have neither a summary nor a "
+                         "stopped-early note, i.e. runs still in flight")
     args = ap.parse_args(argv)
     dirs = [d for d in args.runs
             if os.path.isfile(os.path.join(d, "config.json"))]
+    if args.finished_only:
+        dirs = [d for d in dirs
+                if os.path.exists(os.path.join(d, "summary.json"))
+                or os.path.exists(os.path.join(d, "stopped_early.json"))]
     skipped = [d for d in args.runs if d not in dirs]
     if skipped:
         print("skipping %d path(s) that are not run directories\n" % len(skipped))
@@ -305,8 +312,11 @@ def main(argv=None):
     for r in rows:
         print("### %s  (mode=%s seed=%s size=%s)" % (r["run"], r["mode"],
                                                      r["seed"], r["N_or_M"]))
-        print("  wall %.1fs, %.1f epochs/s" % (r["wall_seconds"],
-                                               r["epochs_per_second"]))
+        if r.get("wall_seconds") is None:
+            print("  (no summary: run stopped before it finished)")
+        else:
+            print("  wall %.1fs, %.1f epochs/s" % (r["wall_seconds"],
+                                                   r["epochs_per_second"]))
         for line in r["patterns"]:
             print("  " + line)
         print()
