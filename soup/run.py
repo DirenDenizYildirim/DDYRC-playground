@@ -279,16 +279,20 @@ def main(argv=None):
 
     np.save(kymo_path, np.array(kymo, dtype=np.uint8))
     wall = time.perf_counter() - t_start
-    total_runs = cfg.ticks_per_epoch * soup.epoch
+    # a resumed run only simulated the epochs after the checkpoint, so the
+    # throughput figures have to be against those, not against soup.epoch
+    ran = soup.epoch - cfg.start_epoch
+    total_runs = cfg.ticks_per_epoch * ran
     with open(os.path.join(out, "summary.json"), "w") as fh:
         json.dump({
             "config": json.loads(cfg.to_json()),
             "wall_seconds": round(wall, 2),
             "sim_seconds": round(soup.sim_s, 2),
             "epochs": soup.epoch,
+            "epochs_simulated": ran,
             "runs": total_runs,
-            "epochs_per_second": round(soup.epoch / wall, 3),
-            "sim_epochs_per_second": round(soup.epoch / soup.sim_s, 3) if soup.sim_s else None,
+            "epochs_per_second": round(ran / wall, 3),
+            "sim_epochs_per_second": round(ran / soup.sim_s, 3) if soup.sim_s else None,
             "platform": platform.platform(),
             "python": sys.version.split()[0],
             "numpy": np.__version__,
