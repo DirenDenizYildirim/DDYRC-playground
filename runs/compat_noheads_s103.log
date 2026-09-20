@@ -1,2 +1,20 @@
 epoch       0  HO=-0.0001  meanSteps=     0.0  copy=0.000  A(t)=0  sim=0.0s
 epoch     250  HO=0.3166  meanSteps=   547.4  copy=0.499  A(t)=0  sim=15.0s
+epoch     500  HO=0.4326  meanSteps=   525.7  copy=0.481  A(t)=0  sim=31.0s
+epoch     750  HO=0.4822  meanSteps=   515.8  copy=0.475  A(t)=0  sim=44.7s
+epoch    1000  HO=0.4981  meanSteps=   523.8  copy=0.488  A(t)=0  sim=58.6s
+epoch    1250  HO=0.5279  meanSteps=   526.2  copy=0.510  A(t)=273  sim=73.1s
+epoch    1500  HO=0.5173  meanSteps=   530.3  copy=0.527  A(t)=292  sim=87.9s
+epoch    1750  HO=0.5202  meanSteps=   536.8  copy=0.553  A(t)=308  sim=102.9s
+epoch    2000  HO=0.5023  meanSteps=   543.5  copy=0.592  A(t)=319  sim=119.2s
+epoch    2250  HO=0.4698  meanSteps=   544.0  copy=0.632  A(t)=326  sim=134.6s
+epoch    2500  HO=0.5291  meanSteps=   564.4  copy=0.669  A(t)=334  sim=150.9s
+epoch    2750  HO=2.7766  meanSteps=  1022.3  copy=0.911  A(t)=334  sim=174.7s
+epoch    3000  HO=2.9298  meanSteps=  1263.5  copy=0.992  A(t)=334  sim=202.7s
+epoch    3250  HO=3.0476  meanSteps=  1279.6  copy=0.997  A(t)=334  sim=229.1s
+epoch    3500  HO=3.1271  meanSteps=  1289.3  copy=0.997  A(t)=402  sim=256.5s
+epoch    3750  HO=3.0649  meanSteps=  1284.9  copy=0.997  A(t)=1847  sim=284.8s
+takeover detected at epoch 3750; running to 4250
+epoch    4000  HO=3.3238  meanSteps=  1501.6  copy=0.996  A(t)=2337  sim=316.1s
+epoch    4250  HO=3.4514  meanSteps=  1825.1  copy=0.996  A(t)=2561  sim=353.6s
+done: 4250 epochs in 382.3s wall (353.6s simulating), runs/compat_noheads_s103

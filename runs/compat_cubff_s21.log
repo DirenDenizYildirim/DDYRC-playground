@@ -42,3 +42,9 @@ epoch   10000  HO=0.1535  meanSteps=  1059.4  copy=0.748  A(t)=316  sim=662.5s
 epoch   10250  HO=4.0171  meanSteps=  2680.9  copy=0.851  A(t)=316  sim=698.3s
 epoch   10500  HO=4.7206  meanSteps=  5117.8  copy=0.947  A(t)=316  sim=761.6s
 epoch   10750  HO=5.1063  meanSteps=  7724.6  copy=0.998  A(t)=316  sim=854.0s
+epoch   11000  HO=5.2488  meanSteps=  7927.7  copy=0.999  A(t)=316  sim=972.2s
+epoch   11250  HO=5.3827  meanSteps=  7918.3  copy=0.999  A(t)=476  sim=1118.5s
+takeover detected at epoch 11250; running to 11750
+epoch   11500  HO=5.5044  meanSteps=  7870.8  copy=0.999  A(t)=1048  sim=1264.7s
+epoch   11750  HO=5.6469  meanSteps=  7854.1  copy=0.999  A(t)=1461  sim=1406.8s
+done: 11750 epochs in 1463.6s wall (1406.8s simulating), runs/compat_cubff_s21

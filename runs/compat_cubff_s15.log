@@ -34,3 +34,8 @@ epoch    8000  HO=4.6072  meanSteps=  2017.4  copy=0.791  A(t)=315  sim=533.8s
 epoch    8250  HO=5.0452  meanSteps=  6460.1  copy=0.994  A(t)=315  sim=613.1s
 epoch    8500  HO=5.1908  meanSteps=  7811.7  copy=0.998  A(t)=315  sim=706.8s
 epoch    8750  HO=5.2942  meanSteps=  7834.7  copy=0.998  A(t)=315  sim=800.8s
+epoch    9000  HO=5.4398  meanSteps=  7739.7  copy=0.998  A(t)=528  sim=947.4s
+takeover detected at epoch 9000; running to 9500
+epoch    9250  HO=5.5706  meanSteps=  7620.4  copy=0.998  A(t)=996  sim=1092.1s
+epoch    9500  HO=5.6893  meanSteps=  7862.9  copy=0.998  A(t)=1367  sim=1237.4s
+done: 9500 epochs in 1280.3s wall (1237.4s simulating), runs/compat_cubff_s15

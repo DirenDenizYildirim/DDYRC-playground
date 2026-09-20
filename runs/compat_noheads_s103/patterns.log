@@ -20,3 +20,179 @@
        415  ................  a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0
        392  ................  fcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfc
        390  ................  12121212121212121212121212121212
+# epoch 500  H=7.9847 C=7.5351 HO=0.4326  A(t)=0
+      1499  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1122  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+       879  ................  01010101010101010101010101010101
+       853  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       693  ................  fefefefefefefefefefefefefefefefe
+       690  ................  fcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfc
+       660  ................  ffffffffffffffffffffffffffffffff
+       589  ................  84848484848484848484848484848484
+       536  ................  83838383838383838383838383838383
+       500  DDDDDDDDDDDDDDDD  44444444444444444444444444444444
+# epoch 750  H=7.9672 C=7.4610 HO=0.4822  A(t)=0
+      2565  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1201  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+       694  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       627  ................  01010101010101010101010101010101
+       565  ::::::::::::::::  3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a
+       564  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       525  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       510  \\\\\\\\\\\\\\\\  5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c
+       421  ................  ffffffffffffffffffffffffffffffff
+       408  ................  bdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbd
+# epoch 1000  H=7.9446 C=7.4152 HO=0.4981  A(t)=0
+      2514  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1487  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+       792  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       749  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       685  ................  01010101010101010101010101010101
+       624  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       618  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       590  ::::::::::::::::  3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a
+       392  ................  ffffffffffffffffffffffffffffffff
+       392  ................  e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7
+# epoch 1250  H=7.9175 C=7.3483 HO=0.5279  A(t)=273
+      2496  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      2223  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+      1286  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       906  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       869  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       626  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       457  ................  fbfbfbfbfbfbfbfbfbfbfbfbfbfbfbfb
+       444  ................  fafafafafafafafafafafafafafafafa
+       437  ................  ffffffffffffffffffffffffffffffff
+       374  ................  edededededededededededededededed
+# epoch 1500  H=7.8917 C=7.3251 HO=0.5173  A(t)=292
+      2202  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+      1992  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1009  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       887  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       742  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       555  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       543  ................  01010101010101010101010101010101
+       525  ................  fafafafafafafafafafafafafafafafa
+       463  }}}}}}}}}}}}}}}}  7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d
+       445  ................  ffffffffffffffffffffffffffffffff
+# epoch 1750  H=7.8571 C=7.2816 HO=0.5202  A(t)=308
+      2462  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+      2052  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1190  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       870  ................  01010101010101010101010101010101
+       850  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       756  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       681  8888888888888888  38383838383838383838383838383838
+       644  ::::::::::::::::  3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a
+       634  ................  ffffffffffffffffffffffffffffffff
+       442  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+# epoch 2000  H=7.8255 C=7.2604 HO=0.5023  A(t)=319
+      2115  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+      1792  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1111  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       953  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       824  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       622  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       609  ................  01010101010101010101010101010101
+       466  ................  ffffffffffffffffffffffffffffffff
+       443  ::::::::::::::::  3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a
+       410  ????????????????  3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f
+# epoch 2250  H=7.7934 C=7.2567 HO=0.4698  A(t)=326
+      2157  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+      1492  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1074  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       827  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       805  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       716  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       460  ::::::::::::::::  3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a
+       455  ZZZZZZZZZZZZZZZZ  5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a
+       422  }}}}}}}}}}}}}}}}  7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d
+       414  ................  01010101010101010101010101010101
+# epoch 2500  H=7.7735 C=7.1759 HO=0.5291  A(t)=334
+      2095  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+      1634  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+      1093  ================  3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d
+       923  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       700  ;;;;;;;;;;;;;;;;  3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b
+       679  >>>>>>>>>>>>>>>>  3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e3e
+       623  H.P.i..[...$N.>{  48f150e369b21c5baac72e244e9f3e7b
+       608  .P.i..[...$N.>{.  f150e369b21c5baac72e244e9f3e7bbe
+       508  .H.P.i..[...$N.>  e748f150e369b21c5baac72e244e9f3e
+       437  ::::::::::::::::  3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a
+# epoch 2750  H=5.9680 C=3.6976 HO=2.7766  A(t)=334
+      4038  .H.P.i..[...$N.>  0648f150e369b21c5baac72e244e9f3e
+      3847  M.H.P.i..[...$N.  4d0648f150e369b21c5baac72e244e9f
+      3227  ZM.H.P.i..[...$N  5a4d0648f150e369b21c5baac72e244e
+      2804  <ZM.H.P.i..[...$  3c5a4d0648f150e369b21c5baac72e24
+      2666  H.P.i..[...$N.>{  48f150e369b21c5baac72e244e9f3e7b
+      2451  >.N$...[..i.P.H.  3e9f4e242ec7aa5b1cb269e350f14806
+      2206  .N$...[..i.P.H.M  9f4e242ec7aa5b1cb269e350f148064d
+      2091  .P.i..[...$N.>{.  f150e369b21c5baac72e244e9f3e7bbe
+      2045  {>.N$...[..i.P.H  7b3e9f4e242ec7aa5b1cb269e350f148
+      1877  .{>.N$...[..i.P.  be7b3e9f4e242ec7aa5b1cb269e350f1
+# epoch 3000  H=5.4170 C=2.9664 HO=2.9298  A(t)=334
+      5023  M.H.P.i..[...$N.  4d0648f150e369b21c5baac72e244e9f
+      4925  .H.P.i..[...$N.>  0648f150e369b21c5baac72e244e9f3e
+      3030  ZM.H.P.i..[...$N  5a4d0648f150e369b21c5baac72e244e
+      2962  >.N$...[..i.P.H.  3e9f4e242ec7aa5b1cb269e350f14806
+      2691  .N$...[..i.P.H.M  9f4e242ec7aa5b1cb269e350f148064d
+      2605  <ZM.H.P.i..[...$  3c5a4d0648f150e369b21c5baac72e24
+      2445  5<ZM.H.P.i..[...  353c5a4d0648f150e369b21c5baac72e
+      2194  @.{.H.P.i..[.Y.$  40027be748f150e369b21c5baa592e24
+      2045  .5<ZM.H.P.i..[..  a6353c5a4d0648f150e369b21c5baac7
+      1972  {.5<ZM.H.P.i..[.  7ba6353c5a4d0648f150e369b21c5baa
+# epoch 3250  H=5.4676 C=2.8974 HO=3.0476  A(t)=334
+      2108  .H.P.i..[...$N.>  0648f150e369b21c5baac72e244e9f3e
+      2056  M.H.P.i..[...$N.  4d0648f150e369b21c5baac72e244e9f
+      1423  <@M.H.P.i..[...$  3c404d0648f150e369b21c5baac72e24
+      1414  {.5<@M.H.P.i..[.  7ba6353c404d0648f150e369b21c5baa
+      1405  @M.H.P.i..[...$N  404d0648f150e369b21c5baac72e244e
+      1374  P{.5<@M.H.P.i..[  507ba6353c404d0648f150e369b21c5b
+      1368  5<@M.H.P.i..[...  353c404d0648f150e369b21c5baac72e
+      1315  .5<@M.H.P.i..[..  a6353c404d0648f150e369b21c5baac7
+      1309  >P{.5<@M.H.P.i..  3e507ba6353c404d0648f150e369b21c
+      1202  >.N$...[..i.P.H.  3e9f4e242ec7aa5b1cb269e350f14806
+# epoch 3500  H=5.5640 C=3.0226 HO=3.1271  A(t)=402
+      1425  {.H.P.i..[.Y.$N.  7be748f150e369b21c5baa592e244e9f
+      1409  .H.P.i..[.Y.$N.>  e748f150e369b21c5baa592e244e9f3e
+      1330  @.{.H.P.i..[.Y.$  40027be748f150e369b21c5baa592e24
+      1277  .{.H.P.i..[.Y.$N  027be748f150e369b21c5baa592e244e
+      1153  .H...i..[...$N.>  0648f1b4f969b21c5baac72e244e9f3e
+      1125  M.H...i..[...$N.  4d0648f1b4f969b21c5baac72e244e9f
+      1119  @M.H...i..[...$N  404d0648f1b4f969b21c5baac72e244e
+      1110  ..{.H.P.i..[.Y.$  a6027b1048f150e369b21c5baa592e24
+      1099  <@M.H...i..[...$  3c404d0648f1b4f969b21c5baac72e24
+      1087  5<@M.H...i..[...  353c404d0648f1b4f969b21c5baac72e
+# epoch 3750  H=5.7491 C=3.3170 HO=3.0649  A(t)=1847
+      1480  {.H......[...$N.  7be748f1a11c16b21c5baac72e244e9f
+      1397  .H......[...$N.>  e748f1a11c16b21c5baac72e244e9f3e
+      1348  Qa.{.H......[...  51611f7be748f1a11c16b21c5baac72e
+      1292  .Qa.{.H......[..  0251611f7be748f1a11c16b21c5baac7
+      1243  .{.H......[...$N  1f7be748f1a11c16b21c5baac72e244e
+      1241  a.{.H......[...$  611f7be748f1a11c16b21c5baac72e24
+      1217  ?.Qa.{.H......[.  3f0251611f7be748f1a11c16b21c5baa
+      1075  .N$...[......H.{  9f4e242ec7aa5b1cb2161ca1f148e77b
+      1074  >.N$...[......H.  3e9f4e242ec7aa5b1cb2161ca1f148e7
+      1064  i?.Qa.{.H......[  693f0251611f7be748f1a11c16b21c5b
+# epoch 4000  H=5.8802 C=3.2222 HO=3.3238  A(t)=2337
+      1130  5<@M.H...i..[...  353c404d0648f1b4f969b21c5baac72e
+      1123  <@M.H...i..[...$  3c404d0648f1b4f969b21c5baac72e24
+      1100  @M.H...i..[...$N  404d0648f1b4f969b21c5baac72e244e
+       903  M.H...i..[...$N.  4d0648f1b4f969b21c5baac72e244e9f
+       889  .H...i..[...$N.>  0648f1b4f969b21c5baac72e244e9f3e
+       810  5<.M.H.P.i..[...  353cda4d0648f150e369b21c5baac72e
+       796  <.M.H.P.i..[...$  3cda4d0648f150e369b21c5baac72e24
+       761  i?.Qa.{.H......[  693f0251611f7be748f1a11c16b21c5b
+       726  ii?.Qa.{.H......  69693f0251611f7be748f1a11c16b21c
+       711  .5<.M.H.P.i..[..  a6353cda4d0648f150e369b21c5baac7
+# epoch 4250  H=5.9073 C=3.1710 HO=3.4514  A(t)=2561
+      1169  Qa.{.H......[...  51611f7be748f1dc1c16b21c5baac72e
+      1144  .Qa.{.H......[..  0251611f7be748f1dc1c16b21c5baac7
+      1139  ?.Qa.{.H......[.  3f0251611f7be748f1dc1c16b21c5baa
+      1120  @.{...P.i..[.Y.$  40027be7e4f150df69b21c5baa592e24
+      1118  i?.Qa.{.H......[  693f0251611f7be748f1dc1c16b21c5b
+      1097  ii?.Qa.{.H......  69693f0251611f7be748f1dc1c16b21c
+       941  .{...P.i..[.Y.$N  027be7e4f150df69b21c5baa592e244e
+       888  {...P.i..[.Y.$Nm  7be7e4f150df69b21c5baa592e244e6d
+       886  F{.5<@M.H...i..[  467ba6353c404d0648f1b4f969b21c5b
+       843  ...P.i..[.Y.$Nm>  e7e4f150df69b21c5baa592e244e6d3e

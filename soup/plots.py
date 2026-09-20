@@ -130,7 +130,12 @@ def kymo_rgb(kymo):
 
 
 def plot_kymograph(run_dir, out_path, epochs_per_row, raw_path=None):
-    kymo = np.load(os.path.join(run_dir, "kymograph.npy"))
+    src = os.path.join(run_dir, "kymograph.npy")
+    if not os.path.exists(src):
+        # a run stopped by hand never wrote its final kymograph
+        print("no kymograph in %s, skipping" % run_dir)
+        return
+    kymo = np.load(src)
     rgb = kymo_rgb(kymo)
     if raw_path:
         plt.imsave(raw_path, rgb)          # exactly one pixel per byte

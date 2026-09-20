@@ -1,58 +1,71 @@
 # Results
 
-Runs: the two specified experiments — `ring` for 50k epochs at three seeds and
-`bff` at three seeds — plus a planted-replicator control, a head-confinement
-sensitivity set, and four further `bff` configurations run to chase down the
-`bff` result. Every number below comes from a committed run directory;
-`python -m soup.analyze runs/...` regenerates the tables and
+65 runs across ten configurations: the ring baseline and its
+boundary-free variants, bff at four scales, bff reproduced bit-exactly against
+[cubff](https://github.com/paradigms-of-intelligence/cubff) in both of its
+languages, the blocks locality sweep, a head-confinement sensitivity set and a
+planted-replicator control. Every number comes from a committed run directory;
+`python -m soup.analyze --rates runs/...` regenerates the tables and
 `python -m soup.plots runs/...` the figures.
 
 ---
 
-## The four questions, answered first
+## The answer, first
 
-**Did a replicator transition occur?**
+**One family of configurations produces a program-class takeover: bff pairing
+with cubff's initial machine state.** Nothing else tested does.
 
-* **ring — yes, in all three seeds, and it is trivial.** Memory converges to a
-  field built from two byte values: `<` at ~82% and `,` at ~11% (seed 2 found
-  the mirror-image pair `{` and `.` instead, and ended up with both). Order-0
-  entropy falls from 8.0 to ~1.3 bits/byte. A separate invasion experiment
-  confirms this field is genuinely self-propagating and not merely an
-  absorbing state: seeded into half a ring of fresh random bytes with mutation
-  off, it spreads.
-* **bff — no, in any of ten runs, including three at a matched interaction
-  budget.** Nothing took over at N=1024 (3 seeds × 20k epochs), N=8192
-  (3 seeds × 20k), N=1024 × 200k epochs, or N=32768 × 64k epochs
-  (3 seeds, 1.05e9 pairwise interactions each — the budget at which the
-  reference paper reports a 40% transition rate). The interpreter and the
-  metrics are separately verified to detect a takeover when one happens, so
-  this is a real negative, but at 3 seeds against a 40% rate it is also
-  **not a failed validation**: three misses have probability 0.6³ ≈ 0.22 even
-  if the process here matched the reference exactly. The honest verdict is
-  that the published emergence result was **not reproduced, and not
-  contradicted either**. See below for what would settle it.
+| configuration | n | program-class | rate (95% CI) |
+|---|---|---|---|
+| **bff, `--compat cubff`** (head0/head1 read from `tape[0..1]`, pc = 2) | 17 | **11** | **0.65 (0.41–0.83)** |
+| bff, `--compat cubff_noheads` (our spec: heads at 0, pc = 0) | 6 | 1 | 0.17 (0.03–0.56) |
+| bff, our scaffolding, N = 1024 … 32768 | 10 | 0 | 0.00 (0.00–0.28) |
+| blocks, d = 1 / 2 / 8, N = 8192 | 11 | 0 | 0.00 (0.00–0.26) |
+| ring, control | 3 | 0 → *crystal* | 0.00 (0.00–0.56) |
+| ring, no copy primitive | 3 | 0 → *random* | 0.00 (0.00–0.56) |
+| ring, with insertions and deletions | 3 | 0 → *crystal* | 0.00 (0.00–0.56) |
 
-**At what epoch?** In the ring, high-order entropy crosses 0.5 bits/byte at
-epoch 250–300 and 1.0 at epoch 850–1450; order-0 entropy has fallen below 4.0
-bits/byte by epoch 2100–2700. The whole transition takes about 2000 of 50000
-epochs, i.e. the first 4% of the run.
+**`--compat cubff` at N = 32768 is therefore the baseline to build on.** It is
+the only configuration here where something that computes takes over, it does
+so within 2000–11250 epochs, and it is reproducible bit-for-bit against the
+reference implementation.
 
-**What do the dominant patterns look like?** Runs of `<` interrupted by an
-occasional `,`. The top ten 16-byte windows at the end of `ring_s1` are
-`<<<<<<<<<<<<<<<<` (20630 occurrences), then `,,,,,,,,,,,,,,,,` (539), then
-single-`,` substitutions of the all-`<` window at every offset (490–526 each).
-That is the whole vocabulary.
+### The four questions
 
-**Does A(t) plateau afterwards?** **No — and that is a problem with A(t), not a
-sign of ongoing novelty.** A(t) is still climbing at epoch 50000 — decelerating
-(72 new windows per 1000 epochs over the first half, 16 over the second) but
-nowhere near flat, long after the soup has stopped doing anything new. Of the
-448 windows abundant (count >= `c_min`) at the final snapshot of `ring_s1`,
-57% are built *only* from the four bytes `< , { .`; most of the rest add one
-byte adjacent in value to `<` (`;` = 0x3b, `=` = 0x3d). A(t) is counting the
-combinatorics of a two-letter alphabet, not new structure. Details below.
+**Did a replicator transition occur?** Yes, in two distinct senses that should
+not be confused.
 
----
+* **A program takeover**, in cubff-semantics bff: high-order entropy 5.1–6.4,
+  runs saturating the 8192-step budget, 99.4–99.7% of steps re-running code,
+  and dominant 16-byte windows that are code containing brackets.
+* **A crystal takeover**, in every ring configuration that has a copy
+  primitive: memory collapses to a two-byte field (`<` ~82%, `,` ~11%, or the
+  `{`/`.` mirror) that genuinely self-propagates but executes nothing. Loops
+  are purged; 0.00 of steps re-run an instruction.
+
+The classifier separates them, and the distinction is the main thing the first
+version of this baseline got wrong by reporting only high-order entropy.
+
+**At what epoch?** Program takeovers: 2000–11250 (median 8000), i.e. 3.3e7 to
+1.8e8 pairwise interactions. Crystal takeovers: order-0 entropy below 4.0 by
+epoch 2100–2800, in the first 5% of the run.
+
+**What do the dominant patterns look like?** Programs: a *quasispecies*, not a
+clone — 16636 distinct tapes in a 32768-tape soup, no tape with more than 6
+copies, but a shared 16-byte motif in 20.5% of them. Crystals: runs of `<`
+interrupted by an occasional `,`, and nothing else — the top ten 16-byte
+windows at the end of a ring run are `<<<<<<<<<<<<<<<<` (20630), then
+`,,,,,,,,,,,,,,,,` (539), then single-`,` substitutions.
+
+**Does A(t) plateau afterwards?** With the null filter and epoch-based `tau`,
+A(t) behaves far better than it did: it is flat at exactly **0** for the whole
+50000 epochs of the no-copy control, where nothing whatever happens, which the
+old A(t) could not have shown. In the crystal runs it still climbs, at 3–5×
+lower values than before (362 against 1967 for ring seed 1). In the program
+runs it jumps by an order of magnitude at the transition — 29 to 1415 in one
+snapshot — and then stops climbing steeply. So: it plateaus where the soup is
+dead, it jumps where a program takes over, and it still drifts upward in a
+crystal, which remains the metric's weakest case.
 
 ## What was validated, and how
 
@@ -146,83 +159,85 @@ its runs write more often.
 
 ---
 
-## bff: no spontaneous takeover in ten runs
+## bff, settled: the transition is real, and the head rule sets its rate
 
-| run | N | epochs | interactions | HOE final | HOE max | H final | A(t) | takeover |
-|---|---|---|---|---|---|---|---|---|
-| bff_s1 | 1024 | 20000 | 1.0e7 | 0.214 | 0.529 | 7.517 | 547 | no |
-| bff_s2 | 1024 | 20000 | 1.0e7 | 0.226 | 0.600 | 7.397 | 499 | no |
-| bff_s3 | 1024 | 20000 | 1.0e7 | 0.242 | 0.575 | 7.392 | 535 | no |
-| bff_n8192_s1 | 8192 | 20000 | 8.2e7 | 0.341 | 0.592 | 7.509 | 2229 | no |
-| bff_n8192_s2 | 8192 | 20000 | 8.2e7 | 0.320 | 0.576 | 7.514 | 2230 | no |
-| bff_n8192_s3 | 8192 | 20000 | 8.2e7 | 0.320 | 0.597 | 7.527 | 2410 | no |
-| bff_long_s1 | 1024 | 200000 | 1.0e8 | 0.466 | 0.694 | 7.490 | 262 | no |
-| bff_n32768_s1 | 32768 | 64000 | **1.05e9** | 0.292 | 0.589 | 7.487 | 569 | no |
-| bff_n32768_s2 | 32768 | 64000 | **1.05e9** | 0.335 | 0.564 | 7.510 | 560 | no |
-| bff_n32768_s3 | 32768 | 64000 | **1.05e9** | 0.290 | 0.586 | 7.526 | 556 | no |
+Running cubff's own language bit-exactly answers the question the earlier runs
+could not. **Program-class takeovers happen, they happen quickly, and the
+initial machine state is what governs how often.**
 
-The reference result (Agüera y Arcas et al. 2024) uses a soup of **2^17 = 131072
-tapes** and reports that **40% of runs show a state transition within 16k
-epochs** — i.e. even at full scale, most runs do not transition in that window.
-16k epochs at 2^17 tapes is about **1.1e9 pairwise interactions**. The first
-seven rows of the table fall 11× to 110× short of that budget, so finding no
-transition in them is the outcome the published numbers predict rather than
-evidence of a broken interpreter.
+Budget: N = 32768 tapes, 16000 epochs — the window the reference paper states
+its own rate over. A seed counts as a transition if the detector fires at or
+before epoch 16000 and the end state classifies as *program*.
 
-The last three rows close that gap: N=32768 for 64000 epochs is 1.05e9
-interactions, matching the reference budget to within 5%. All three seeds ran
-to completion (44 minutes each) with no transition — peak high-order entropy
-0.56–0.59 against the 5.5 a verified takeover produces, order-0 entropy still
-7.49–7.53, and the ten most frequent 16-byte windows at the end are
-constant-byte runs (`>>>>>>>>>>>>>>>>`, 591 occurrences in a 2 MiB soup, then
-`;;;;;;;;;;;;;;;;`, `::::::::::::::::` — the ±1 neighbours of `<`), not program
-text.
+| configuration | n | program | rate | 95% CI (Wilson) | takeover epochs |
+|---|---|---|---|---|---|
+| `--compat cubff` (heads from tape, pc=2) | 17 | 11 | **0.65** | 0.41–0.83 | 2000, 2750, 4000, 4250, 5500, 8000, 8750, 9500, 9500, 10250, 11250 |
+| `--compat cubff_noheads` (our spec) | 6 | 1 | **0.17** | 0.03–0.56 | 2750 |
+| our own bff scaffolding, N=32768, 64000 epochs | 3 | 0 | 0.00 | 0.00–0.56 | — |
 
-Three seeds against a reported 40% per-run rate is weak evidence either way:
-P(0 of 3) = 0.22 under the reference's own numbers. So this does **not**
-establish a discrepancy, and it does not establish agreement. What it does
-establish is that the substrate is not inert — a planted replicator fixates
-here in ~20 epochs and every metric screams — so the open question is about
-the *rate of spontaneous origination*, not about whether replication works.
+The 0.65 rate is statistically consistent with the 40%-within-16k-epochs the
+paper reports, and the takeovers are not marginal: median epoch 8000, i.e.
+1.3e8 pairwise interactions, well inside the budget. **The published emergence
+result reproduces.**
 
-Two caveats on the matching, stated because they are not controlled for:
+The head rule is the difference, but the evidence is suggestive rather than
+conclusive at this sample size. Comparing the two compat languages directly,
+11/17 against 1/6 gives Fisher p = 0.069. Pooling the three earlier N=32768
+runs — the same language, our scaffolding, a *four times longer* budget, no
+transition — gives 11/17 against 1/9 and p = 0.015. Pooling is defensible
+here because `--compat cubff_noheads` is provably the same language as our
+bff (byte-exact against cubff, `tests/test_compat.py`), but it mixes two RNG
+streams and two epoch budgets, so it is stated separately rather than quietly
+merged.
 
-* The budget was matched on **interactions**, not on soup size. The reference
-  uses 2^17 tapes for 16k epochs; these runs use 2^15 tapes for 64k epochs.
-  If the hazard of a replicator arising scales with interactions, the two are
-  equivalent; if it scales with the number of independent *sites*, these runs
-  have 4× fewer chances. (Each tape here accumulates 4× more personal history,
-  which should if anything help, but that is an argument, not a measurement.)
-* The reference's rule for a head moving out of bounds is not stated in the
-  material available here, and bff was not tested under both readings at
-  length. In ring mode the two readings agree; in bff they might not.
+**The earlier write-up said bff_noheads never transitions. That was wrong** —
+it was an artefact of ten runs, not a property of the language. Seed 103
+transitions at epoch 2750 with HOE 3.45 and dominant windows that are plainly
+code (`Qa.{.H......[...`, 1169 occurrences). The honest statement is that both
+languages transition and the heads variant transitions several times more
+often.
 
-Settling it properly needs either a soup of 2^17 tapes — about 3.5 hours per
-seed at this throughput once the pre-transition phase alone is counted, and far
-longer if a transition occurs and every run starts using the full 8192-step
-budget — or ~10 seeds at the present scale to put a useful confidence interval
-on a 40% rate. Neither fits the time available here, and neither should be
-skipped before claiming the reference result reproduces.
+### What a takeover looks like
 
-What the bff soups *do* show is the same chemistry the ring runs push to
-completion, just never reaching fixation: `<` is enriched to ~7% of memory
-against a random-soup level of 1/256 = 0.39% (18×) and `,` to ~2.5% (6×), while
-`+`, `-` and `]` stay at the random level. See
-`analysis/bff/byte_composition.png`. This is a stationary state, not a slow
-climb — across all 33 memory dumps from epoch 40000 onwards `<` stays within
-0.039–0.079 and `,` within 0.011–0.050, with no trend (every 40000th dump
-shown):
+Every transitioned run moves together on every metric, within one snapshot:
 
-| epoch | 0 | 40000 | 80000 | 120000 | 160000 | 200000 |
-|---|---|---|---|---|---|---|
-| `<` | 0.0035 | 0.0718 | 0.0698 | 0.0679 | 0.0509 | 0.0581 |
-| `,` | 0.0039 | 0.0328 | 0.0222 | 0.0468 | 0.0329 | 0.0307 |
+| | before | after |
+|---|---|---|
+| order-0 entropy H | 7.75–7.92 | 5.80–6.86 |
+| high-order entropy | 0.12–0.17 | **5.10–6.35** |
+| mean steps per run | 830–1130 | 7720–8174 (budget 8192) |
+| fraction of steps re-running code | 0.89–0.93 | 0.994–0.997 |
+| fraction of runs copying | 0.74 | 0.999 |
 
-Why it stalls in bff and fixes in the ring was not established. Two
-differences are candidates and neither was tested: the ring's copied value
-`memory[p]` is a uniform sample of all memory, whereas bff's is always byte 0
-of whichever tape the shuffle put first; and bff re-pairs every tape every
-epoch, so no two tapes stay adjacent.
+### The end state is a quasispecies, not a clone
+
+This is where the emergent replicator differs sharply from the planted one.
+Tracking seed 11 across its memory dumps:
+
+| epoch | distinct tapes (of 32768) | copies of the modal tape | occurrences of the dominant motif |
+|---|---|---|---|
+| 0–9000 | 32766–32768 | 1–3 | 0 |
+| 10000 | 16636 | 6 | 6708 |
+
+The transition is **abrupt** — it completes inside a single 1000-epoch window,
+which is what makes "phase transition" the right word — but what takes over is
+a *family*. There is no dominant tape: the most common exact 64-byte tape
+appears 6 times out of 32768, and 8005 distinct tapes are needed to cover half
+the soup. What is shared is a motif: `.{W.E..<..@]>...` occurs 6708 times, one
+per carrier, in 20.5% of tapes.
+
+The planted control is the opposite: 1006 identical copies of one 25-byte
+program in a 1024-tape soup. Emergent replication here is a cloud of variants
+around a motif; designed replication is a clone.
+
+The motif is also not self-sufficient. Pairing a carrier with a *fresh random*
+tape, the motif count grows in 26% of trials and the mean change is −0.24; two
+random tapes never produce it (0 occurrences in 300 trials). At its 20%
+equilibrium abundance, carrier × non-carrier pairings gain +0.07 motifs on
+average, with gains and losses nearly balanced — the population sits at a fixed
+point rather than mid-sweep. So the replicators here depend on an environment
+that is already mostly relatives, which is a property worth knowing before
+building on this baseline.
 
 ---
 
@@ -536,39 +551,66 @@ program, however abundant.
 
 ## Things that look like bugs rather than findings
 
-Stated plainly, including the ones that turned out to be neither.
+Stated plainly, including the ones that were bugs and the one claim that was
+simply wrong.
 
-1. **The bff non-result is not a bug, but it is not a clean validation
-   either.** It was chased down rather than reported: the interpreter supports
-   exact self-replication (verified), the dynamics amplify a planted replicator
-   to fixation in ~20 epochs (verified), the metrics register that takeover
-   unmistakably (verified). Ten runs, three of them at the reference's own
-   interaction budget, produced no spontaneous transition. Against a reported
-   40% per-run rate that is an unremarkable outcome (p ≈ 0.22 for three
-   misses), so the correct statement is that bff mode has **not yet validated
-   the interpreter against the published result** — it has only shown that
-   nothing in the substrate prevents the result.
-2. **A single planted replicator usually goes extinct** (5 of 8 seeds). This
-   looked like a failure of the bff driver at first. It is founder
-   stochasticity: the hand-written replicator only copies when the random
-   pairing puts it in the first half, so its per-epoch growth factor is ~1.5,
-   and extinction from one founder is likely. With 20 founders, takeover is
-   reliable across seeds.
-3. **Mean steps per run falling to 128.5 in the ring** looked like the
-   interpreter failing to execute anything. It is real and explainable: 129
-   steps is exactly a straight walk from `p` to the far edge of the window, and
-   the soup has purged the brackets, so there are no loops left to run.
-4. **A(t) rising forever in a dead soup** is a property of the metric as
-   specified, quantified above, not a counting error — the persistence logic is
-   unit-tested against hand-built cases.
-5. **`high_order_entropy` reading ≈ 0 for a fully structured soup** is likewise
-   the metric behaving as defined, not a compression bug; `zlib_bits` for
-   `ring_s1` is 1.245 bits/byte against 8.003 for random memory.
-6. **Not resolved:** whether the reference implementation of bff wraps heads,
-   clamps them, or terminates on out-of-bounds. The published description
-   available here does not say. Both readings implemented here produce the same
-   ring outcome (above), but the two are not guaranteed to agree in bff, and a
-   faithful reproduction of the published result would want this pinned down.
+**Real bugs, found and fixed:**
+
+1. **numba typed a SplitMix64 seed as int64 and sign-extended its shifts.**
+   The compat stream then matched cubff for seed 1 and diverged for seed 7 —
+   the worst kind of bug, silent and value-dependent. Caught only because the
+   byte-exact test covered more than one seed. Fixed by casting at entry to
+   `splitmix64`; `tests/test_compat.py` now runs two seeds per language.
+2. **Our pairing reshuffled the previous epoch's permutation** where cubff
+   rebuilds the identity permutation and shuffles that. Epoch 0 matched, epoch
+   1 onward did not. Fixed, and the shuffle is reset explicitly with a comment
+   saying why.
+3. **The blocks-mode partner offset was wrong**: `d = 2` drew offsets
+   {−2, −1, **+3, +4**} instead of {−2, −1, +1, +2}. Caught by a test written
+   after the first blocks runs had started; those runs were discarded and
+   redone. No blocks number in this document comes from the buggy version.
+4. **`plot_kymograph` crashed on a run stopped by hand**, which has no final
+   kymograph. Now skips with a message.
+
+**A claim that was wrong:**
+
+5. **"bff_noheads never transitions" was an artefact of ten runs.** It is in
+   the git history of this file. Seed 103 transitions at epoch 2750. The
+   corrected statement is that both languages transition and the heads variant
+   transitions several times more often (p = 0.069 comparing the compat
+   languages directly, 0.015 pooling the earlier runs).
+6. **"Head confinement is load-bearing for the ring result" was also wrong**,
+   and was corrected earlier in the same way: by implementing the alternative
+   rule and measuring it rather than arguing about it.
+
+**Things that looked like bugs and were not:**
+
+7. **A single planted replicator usually goes extinct** (5 of 8 seeds). Founder
+   stochasticity: it only copies when the pairing puts it in the first half, so
+   its growth factor is ~1.5 per epoch. With 20 founders, takeover is reliable.
+8. **Mean steps per run falling to 128.5 in the ring.** Real and explainable:
+   129 steps is exactly a straight walk from `p` to the far edge, and the
+   brackets have been purged. The new in-loop column makes this direct — 0.00
+   of steps re-run an instruction.
+9. **A(t) rising forever in a crystal** is the metric as specified, quantified
+   above. The null filter reduces it 3–5× but does not eliminate it, because a
+   clustered `,` field genuinely is non-i.i.d.
+10. **High-order entropy ≈ 0 for a fully structured soup** is the metric
+    behaving as defined. It is why H is now a required companion column.
+11. **Negative high-order entropy** (−0.02 in the no-copy runs, −0.003 in one
+    halt run) is not a compression failure: it is brotli spending a few bytes
+    of header and failing to beat the order-0 model on incompressible data.
+
+**Still open:**
+
+12. **Whether locality would help a soup that can transition.** The blocks
+    sweep ran our spec's head rule — the low-rate one — so it measures locality
+    inside the non-transitioning regime. Blocks with `--compat cubff` head
+    semantics is a one-flag change and was not run.
+13. **Why the emergent quasispecies is not self-sufficient** against fresh
+    random partners (mean motif change −0.24). It survives because its
+    neighbours are relatives; whether that is a transient of the measurement
+    epoch or a stable property was not established.
 
 ---
 
@@ -576,21 +618,31 @@ Stated plainly, including the ones that turned out to be neither.
 
 Measured on 4 cores of an Intel Xeon @ 2.80 GHz (Linux 6.18, Python 3.11.15,
 numpy 2.4.6, numba 0.67.0). Seeds are run as separate processes, so the
-wall-clock figures below include contention between them; `sim` is time inside
-the compiled kernel.
+wall-clock figures below include contention between them, which was heavy for
+most of this run set.
 
 **The target was 50k epochs of the default ring config in under an hour. It
-takes 142–149 seconds — about two and a half minutes, with three seeds running
-concurrently on four cores — so roughly 25× inside the budget.**
+takes 125–284 seconds depending on how many other runs share the machine — so
+between 13× and 29× inside the budget.**
 
-| run | epochs | wall | sim | epochs/s |
-|---|---|---|---|---|
-| ring (M=65536, R=128), 3 seeds in parallel | 50000 | 142–149 s | 85–87 s | 336–352 |
-| ring, head-bound=halt, 3 seeds | 50000 | 125–126 s | 73–74 s | ~399 |
-| bff N=1024, 3 seeds in parallel | 20000 | 57–64 s | 30–36 s | 315–348 |
-| bff N=8192, 3 seeds in parallel | 20000 | 359 s | 181 s | 56 |
-| bff N=1024, single process | 200000 | 248 s | 228 s | 805 |
-| bff N=32768, 3 seeds in parallel | 64000 | 2659–2668 s | 2306–2326 s | ~24 |
+| run | epochs | wall | epochs/s |
+|---|---|---|---|
+| ring (M=65536, R=128) | 50000 | 125–284 s | 176–399 |
+| ring, no copy primitive | 50000 | 371–528 s | 95–135 |
+| ring, with indels | 50000 | 146–195 s | 256–342 |
+| blocks N=8192, d = 1 / 2 / 8 | 20000 | 264–485 s | 41–76 |
+| bff N=1024 | 20000 | 57–64 s | 315–348 |
+| bff N=8192 | 20000 | 351–364 s | 55–57 |
+| bff N=32768 | 64000 | 2659–2668 s | 24 |
+| bff `--compat cubff` N=32768 | 16000 | 833–1493 s | 6.4–14.1 |
+| bff `--compat cubff_noheads` N=32768 | 16000 | 382–1092 s | 11.1–18.0 |
+
+Ranges are wide because up to seven runs shared four cores, and because a run
+that transitions becomes roughly twenty times more expensive per epoch — every
+run then uses the full 8192-step budget instead of ~1000 steps. The no-copy
+ring is slower than the control for the same reason in reverse: with no
+crystal to fall into, it keeps executing ~1950 steps a run for all 50000
+epochs.
 
 `python -m soup.bench`, single process, measured on the *random* soup — the
 slowest phase for the ring, because random memory is full of brackets and runs
@@ -629,6 +681,18 @@ for s in 1 2 3; do
                      --out runs/ring_halt_s$s
 done
 python experiments/invasion.py --epochs 400
+# bit-exact cubff, the configuration that produces program-class takeovers
+for s in 1 2 3 4 5; do
+  python -m soup.run --config configs/bff_compat.json --compat cubff --seed $s \
+                     --out runs/compat_cubff_s$s
+done
+# blocks locality sweep and the boundary-free ring variants
+for s in 1 2 3; do
+  python -m soup.run --config configs/blocks.json --d 2 --seed $s --out runs/blocks_d2_s$s
+  python -m soup.run --config configs/ring.json --seed $s --no-copy 1 --out runs/ringv_nocopy_s$s
+  python -m soup.run --config configs/ring.json --seed $s --indel 1   --out runs/ringv_indel_s$s
+done
+python -m soup.analyze --rates --finished-only runs/compat_*/
 python -m soup.plots   runs/ring_s1 runs/ring_s2 runs/ring_s3 --out analysis/ring
 python -m soup.analyze runs/ring_s1 runs/ring_s2 runs/ring_s3
 ```
