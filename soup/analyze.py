@@ -192,7 +192,12 @@ def analyse(run_dir):
     d["run"] = os.path.basename(run_dir.rstrip("/"))
     d["mode"] = cfg["mode"]
     d["seed"] = cfg["seed"]
-    d["N_or_M"] = cfg["N"] if cfg["mode"] == "bff" else cfg["M"]
+    d["N_or_M"] = cfg["M"] if cfg["mode"] == "ring" else cfg["N"]
+    d["variant"] = ("d=%d" % cfg["d"] if cfg["mode"] == "blocks" else
+                    ",".join(v for v, on in (("no-copy", cfg.get("no_copy")),
+                                             ("indel", cfg.get("indel")),
+                                             ("halt", cfg.get("head_bound") == "halt"))
+                             if on) or "-")
     walk = summary.get("walk_len")
     if walk is None:
         walk = cfg["R"] + 1 if cfg["mode"] == "ring" else 128
@@ -251,7 +256,8 @@ def rate_report(rows):
     """Transition rate per configuration, with a confidence interval."""
     groups = {}
     for r in rows:
-        key = (r["mode"], r.get("compat", "none"), r["N_or_M"])
+        key = (r["mode"], r.get("compat", "none"), r["N_or_M"],
+               r.get("variant", "-"))
         groups.setdefault(key, []).append(r)
     out = []
     for key, rs in sorted(groups.items()):
@@ -260,6 +266,7 @@ def rate_report(rows):
         epochs = sorted(r["takeover_epoch"] for r in rs
                         if r["takeover_epoch"] is not None)
         out.append({"mode": key[0], "compat": key[1], "size": key[2],
+                    "variant": key[3],
                     "n": len(rs), "programs": k,
                     "rate": round(p, 3), "ci_low": round(lo, 3),
                     "ci_high": round(hi, 3),
@@ -274,17 +281,24 @@ def main(argv=None):
     ap.add_argument("--rates", action="store_true",
                     help="also report the program-class rate per configuration")
     args = ap.parse_args(argv)
-    rows = [analyse(d) for d in args.runs]
+    dirs = [d for d in args.runs
+            if os.path.isfile(os.path.join(d, "config.json"))]
+    skipped = [d for d in args.runs if d not in dirs]
+    if skipped:
+        print("skipping %d path(s) that are not run directories\n" % len(skipped))
+    rows = [analyse(d) for d in dirs]
     print(table(rows))
     print()
     if args.rates:
         print("| configuration | n | program | rate | 95% CI (Wilson) | takeover epochs |")
         print("|---|---|---|---|---|---|")
         for g in rate_report(rows):
-            print("| %s%s N=%s | %d | %d | %.2f | %.2f-%.2f | %s |"
+            print("| %s%s N=%s%s | %d | %d | %.2f | %.2f-%.2f | %s |"
                   % (g["mode"],
                      "" if g["compat"] == "none" else " (%s)" % g["compat"],
-                     g["size"], g["n"], g["programs"], g["rate"],
+                     g["size"],
+                     "" if g["variant"] == "-" else " %s" % g["variant"],
+                     g["n"], g["programs"], g["rate"],
                      g["ci_low"], g["ci_high"],
                      ", ".join(str(e) for e in g["takeover_epochs"]) or "-"))
         print()

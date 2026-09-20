@@ -1,0 +1,6 @@
+{
+  "stopped_by": "operator",
+  "reason": "reached the 16000-epoch budget this experiment reports its rate over",
+  "last_complete_epoch": 16000,
+  "note": "metrics.csv is complete; no summary.json"
+}

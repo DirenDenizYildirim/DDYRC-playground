@@ -342,6 +342,82 @@ same starting point, and loops are exactly what this soup purges.
 
 ---
 
+## blocks: locality, with bff's pairing held fixed
+
+`--mode blocks` was built to separate the two things that differ between bff
+and ring at once — pairing and locality. It keeps bff's pairing exactly (two
+64-byte tapes concatenated, run from ip = head0 = head1 = 0) and varies only
+how far apart the partners may be: a block pairs with one of the `2d` blocks
+within `±d`. N = 8192, 20000 epochs.
+
+| d | seeds | class | H | HOE | mean steps | in-loop | copy frac | A(t) |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 3 | random | 7.979–7.981 | −0.019 – 0.038 | 581–618 | 0.897–0.903 | 0.397–0.403 | 252–268 |
+| 2 | 5 | random | 7.969–7.971 | 0.075–0.092 | 562–589 | 0.892–0.899 | 0.385–0.403 | 276–297 |
+| 8 | 3 | random | 7.845–7.876 | 0.298–0.343 | 581–631 | 0.866–0.878 | 0.448–0.485 | 515–563 |
+
+**No configuration produced a program-class takeover, and none came close.**
+What the sweep does show is a clean monotone effect of mixing: high-order
+entropy rises 0.02 → 0.08 → 0.32 with `d`, A(t) roughly doubles from `d = 1`
+to `d = 8`, the copy fraction rises, and the in-loop fraction falls. More
+mixing, more structure — the opposite of the intuition that locality helps
+replicators by keeping relatives together.
+
+Two honest qualifications. 20000 epochs at N = 8192 is 8.2e7 pairwise
+interactions, and blocks mode runs **our spec's** initial machine state, which
+is the one that produced no transition in ten bff runs even at 1.05e9
+interactions. So this sweep measures how locality behaves *inside the
+non-transitioning regime*; it does not test whether locality would help a soup
+that transitions. The obvious follow-up is blocks with cubff's head rule, which
+is now a one-flag change and was not run here.
+
+---
+
+## Boundary-free ring variants
+
+Three seeds each, 50000 epochs, M = 65536, R = 128.
+
+| variant | class | H | HOE | mean steps | in-loop | copy frac | A(t) | A(t) naive |
+|---|---|---|---|---|---|---|---|---|
+| **a. control** | crystal ×3 | 1.279, 2.120, 1.280 | 0.006, 0.965, 0.015 | 128.2–128.8 | 0.00–0.09 | 0.82–0.85 | 362–2214 | 1967–2493 |
+| **b. no copy** | random ×3 | 7.975–7.977 | −0.025 – −0.023 | 1864–2083 | 0.946–0.952 | **0.000** | **0** | **0** |
+| **c. indel** | crystal ×2, mixed ×1 | 2.483, 2.567, 2.853 | 0.636, 0.912, 1.000 | 128.6–179.8 | 0.00–0.32 | 0.79–0.85 | 760–2163 | 2067–2340 |
+
+**(a) Control** reproduces the earlier ring result under the new metrics, and
+the new in-loop column makes the crystal diagnosis direct rather than inferred:
+**0.00** of steps are spent re-running an instruction, against 0.95 in a random
+soup. The brackets really are gone and every run really is a straight walk.
+
+**(b) Removing the copy primitive stops everything.** With `.` and `,` turned
+into no-ops, memory after 50000 epochs is statistically indistinguishable from
+its initial condition: H = 7.977 against 7.997 at epoch 0, high-order entropy
+slightly *negative*, and **A(t) = 0 — not one 8-byte window ever became
+persistent, in any seed**. Meanwhile the machine is working hard: 1950 steps
+per run against the control's 128, and 95% of those steps re-running code. The
+soup is computing furiously and producing nothing, because the only write left
+is `+`/`-` on the single cell under head0, which cannot move information.
+
+This is the cleanest control in the repository. It says the `<`/`,` crystal is
+not an artefact of the ring's topology or of mutation pressure — it needs a
+primitive that copies a byte from one place to another, and without one the
+ring has no fixed point to fall into.
+
+**(c) Insertions and deletions do not prevent crystallisation — they enrich
+it.** All three seeds still collapse (mean steps 128.6–179.8, in-loop 0.00–0.32),
+but to a *richer* state than the control: H rises from 1.28 to 2.48–2.85 and
+high-order entropy sits at 0.64–1.00 instead of ~0.01. The reason is visible in
+the composition: with indels, both mirror pairs coexist rather than one winning.
+Seed 1 ends at `{` 0.42, `<` 0.35, `.` 0.08, `,` 0.06 — a two-domain state that
+the control reached in only one seed of three.
+
+The reading frame shifting appears to keep domain boundaries alive: an
+insertion inside a `<` field displaces everything after it by one, which a
+substitution cannot do, and that is enough to stop a single domain from
+sweeping cleanly. It is still a crystal, though. Indels bought variety, not
+computation.
+
+---
+
 ## What the metrics missed, and what changed
 
 Three of the four metrics in the first version of this baseline were

@@ -58,3 +58,8 @@ epoch   14000  HO=0.1493  meanSteps=  1037.9  copy=0.755  A(t)=321  sim=962.3s
 epoch   14250  HO=0.1567  meanSteps=  1049.7  copy=0.753  A(t)=322  sim=996.7s
 epoch   14500  HO=0.1428  meanSteps=  1026.2  copy=0.742  A(t)=322  sim=1030.8s
 epoch   14750  HO=0.1500  meanSteps=  1028.0  copy=0.735  A(t)=322  sim=1064.2s
+epoch   15000  HO=0.1551  meanSteps=  1030.9  copy=0.743  A(t)=322  sim=1098.7s
+epoch   15250  HO=0.1673  meanSteps=  1034.6  copy=0.745  A(t)=323  sim=1132.3s
+epoch   15500  HO=0.1650  meanSteps=  1091.9  copy=0.744  A(t)=323  sim=1167.3s
+epoch   15750  HO=0.1579  meanSteps=  1132.2  copy=0.738  A(t)=323  sim=1203.7s
+epoch   16000  HO=0.1577  meanSteps=  1071.9  copy=0.744  A(t)=323  sim=1238.5s
