@@ -1,0 +1,24 @@
+[
+  {
+    "tag": "plateau_s12",
+    "name": "control_first",
+    "a": "runs/plateau_s12/snapshots/epoch_00005500.npy",
+    "b": "runs/plateau_s12/snapshots/epoch_00005500.npy",
+    "out": "analysis/plateau/plateau_s12/control_first",
+    "n": 8192,
+    "epochs": 300,
+    "reps": 5,
+    "every": 10
+  },
+  {
+    "tag": "plateau_s12",
+    "name": "control_last",
+    "a": "runs/plateau_s12/snapshots/epoch_00005500.npy",
+    "b": "runs/plateau_s12/snapshots/epoch_00005500.npy",
+    "out": "analysis/plateau/plateau_s12/control_last",
+    "n": 8192,
+    "epochs": 300,
+    "reps": 5,
+    "every": 10
+  }
+]
