@@ -31,16 +31,18 @@ epochs, i.e. the first 4% of the run.
 
 **What do the dominant patterns look like?** Runs of `<` interrupted by an
 occasional `,`. The top ten 16-byte windows at the end of `ring_s1` are
-`<<<<<<<<<<<<<<<<` (20630 occurrences) followed by every single-`,`
-substitution of it (~500 each). That is the whole vocabulary.
+`<<<<<<<<<<<<<<<<` (20630 occurrences), then `,,,,,,,,,,,,,,,,` (539), then
+single-`,` substitutions of the all-`<` window at every offset (490–526 each).
+That is the whole vocabulary.
 
 **Does A(t) plateau afterwards?** **No — and that is a problem with A(t), not a
-sign of ongoing novelty.** A(t) is still climbing at epoch 50000, roughly
-linearly, long after the soup has stopped doing anything new. Of the 448
-windows persistent at the end of `ring_s1`, 57% are built *only* from the four
-bytes `< , { .`; most of the rest add one byte adjacent in value to `<` (`;` =
-0x3b, `=` = 0x3d). A(t) is counting the combinatorics of a two-letter alphabet,
-not new structure. Details below.
+sign of ongoing novelty.** A(t) is still climbing at epoch 50000 — decelerating
+(72 new windows per 1000 epochs over the first half, 16 over the second) but
+nowhere near flat, long after the soup has stopped doing anything new. Of the
+448 windows abundant (count >= `c_min`) at the final snapshot of `ring_s1`,
+57% are built *only* from the four bytes `< , { .`; most of the rest add one
+byte adjacent in value to `<` (`;` = 0x3b, `=` = 0x3d). A(t) is counting the
+combinatorics of a two-letter alphabet, not new structure. Details below.
 
 ---
 
@@ -107,9 +109,20 @@ What the bff soups *do* show is the same chemistry the ring runs push to
 completion, just never reaching fixation: `<` is enriched to ~7% of memory
 against a random-soup level of 1/256 = 0.39% (18×) and `,` to ~2.5% (6×), while
 `+`, `-` and `]` stay at the random level. See
-`analysis/bff/byte_composition.png`. In bff the tapes are re-shuffled every
-epoch, so a locally self-maintaining field is broken up before it can fix; in
-the ring, memory is one contiguous medium and it fixes.
+`analysis/bff/byte_composition.png`. This is a stationary state, not a slow
+climb — over the 200k-epoch run `<` sits between 0.051 and 0.072 and `,`
+between 0.022 and 0.047 from epoch 40000 onwards, with no trend:
+
+| epoch | 0 | 40000 | 80000 | 120000 | 160000 | 200000 |
+|---|---|---|---|---|---|---|
+| `<` | 0.0035 | 0.0718 | 0.0698 | 0.0679 | 0.0509 | 0.0581 |
+| `,` | 0.0039 | 0.0328 | 0.0222 | 0.0468 | 0.0329 | 0.0307 |
+
+Why it stalls in bff and fixes in the ring was not established. Two
+differences are candidates and neither was tested: the ring's copied value
+`memory[p]` is a uniform sample of all memory, whereas bff's is always byte 0
+of whichever tape the shuffle put first; and bff re-pairs every tape every
+epoch, so no two tapes stay adjacent.
 
 ---
 
@@ -174,7 +187,10 @@ high-order entropy falls back to ~0.04. See *What high-order entropy misses*.
 
 `analysis/ring/kymograph_seed*.png` shows the transition as a thin grey band at
 the top (random bytes) giving way to a solid field within the first few hundred
-epochs.
+epochs. For contrast, `analysis/bff_plant20/kymograph_seed1.png` is what a
+*non*-trivial takeover looks like in the same rendering: 25 epochs of grey
+noise, then vertical stripes as one 25-byte program tiles the entire soup at a
+64-byte pitch.
 
 ---
 
@@ -186,7 +202,33 @@ depends on `head0` walking backwards out of the window, that choice is the one
 most likely to be load-bearing, so it was tested rather than argued about:
 `--head-bound halt` ends a run when a head would leave the region instead.
 
-<!--HALT-->
+The answer is that it is not load-bearing. All three seeds reach the same
+state, by the same route, at almost the same epoch, under either rule:
+
+| seed | rule | HOE ≥ 1.0 | H ≤ 4.0 | H final | `<` | `,` |
+|---|---|---|---|---|---|---|
+| 1 | wrap | 1450 | 2500 | 1.279 | 0.821 | 0.109 |
+| 1 | halt | 1400 | 2700 | 1.165 | 0.835 | 0.105 |
+| 2 | wrap | 850 | 2700 | 2.120 | 0.348 † | 0.050 † |
+| 2 | halt | 1000 | 2800 | 1.245 | 0.814 | 0.125 |
+| 3 | wrap | 850 | 2100 | 1.280 | 0.814 | 0.118 |
+| 3 | halt | 850 | 2200 | 1.309 | 0.798 | 0.129 |
+
+† wrap seed 2 is the run that also grew a `{`/`.` domain (`{` 0.480,
+`.` 0.063); under the halt rule the same seed settled on `<`/`,` alone, so
+which of the two mirror pairs wins is a coin flip, not a consequence of the
+confinement rule.
+
+`analysis/ring_headbound/high_order_entropy.png` overlays the two: identical
+shape, with halt decaying slightly more slowly.
+
+In hindsight the reason is simple, and it is worth stating because the README
+originally guessed the opposite. The copying happens *inside* the window —
+`head0` has 128 cells of room behind `p` before it reaches an edge — so the
+mechanism never depends on a head leaving the region. The halt rule only ends
+some runs a little earlier. Heads can outrun the instruction pointer at all
+only inside a loop, since otherwise both advance one cell per step from the
+same starting point, and loops are exactly what this soup purges.
 
 ---
 

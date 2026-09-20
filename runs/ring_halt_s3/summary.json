@@ -1,0 +1,33 @@
+{
+  "config": {
+    "M": 65536,
+    "N": 1024,
+    "R": 128,
+    "c_min": 8,
+    "epochs": 50000,
+    "head_bound": "halt",
+    "k": 8192,
+    "kymo_width": 4096,
+    "mode": "ring",
+    "mu": 0.00024,
+    "plant": 0,
+    "seed": 3,
+    "snapshot_interval": 50,
+    "stop_after_takeover": 0,
+    "tape_dump_interval": 1000,
+    "tau": 5,
+    "top_k": 10,
+    "top_window": 16,
+    "window_size": 8,
+    "zlib_level": 9
+  },
+  "wall_seconds": 125.41,
+  "sim_seconds": 73.06,
+  "epochs": 50000,
+  "runs": 51200000,
+  "epochs_per_second": 398.699,
+  "sim_epochs_per_second": 684.378,
+  "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+  "python": "3.11.15",
+  "numpy": "2.4.6"
+}
