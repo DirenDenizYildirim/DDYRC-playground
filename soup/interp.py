@@ -19,12 +19,18 @@ value is a no-op that still costs one step.
 Execution ends when the step budget k is exhausted, when the instruction
 pointer runs off the region, or when a bracket has no match.
 
-Head confinement: head0/head1 wrap modulo the region length.  They can never
-leave the region, so a head move is never a termination condition -- this is
-what "heads are confined to within +/-R of p" is taken to mean, and it keeps
-the list of termination conditions exactly the three above.  Brackets are
-matched by scanning the region *at execution time*, so self-modifying code
-changes the control flow it is running under.
+Head confinement: by default head0/head1 wrap modulo the region length.  They
+can never leave the region, so a head move is never a termination condition --
+this is what "heads are confined to within +/-R of p" is taken to mean, and it
+keeps the list of termination conditions exactly the three above.
+
+``wrap_heads=False`` selects the other plausible reading of "confined": a head
+move that would leave the region ends the run instead (reported as
+TERM_OFF_REGION, since the machine has left its region either way).  It is not
+the default and is there for sensitivity analysis -- see RESULTS.md.
+
+Brackets are matched by scanning the region *at execution time*, so
+self-modifying code changes the control flow it is running under.
 """
 import numpy as np
 from numba import njit
@@ -56,7 +62,7 @@ TERM_NAMES = {TERM_BUDGET: "budget", TERM_OFF_REGION: "off_region",
 
 
 @njit(cache=True, nogil=True)
-def run_region(buf, ip, h0, h1, k):
+def run_region(buf, ip, h0, h1, k, wrap_heads=True):
     """Execute ``buf`` in place.  Returns (steps, n_copies, term_code).
 
     ``n_copies`` counts executed ``.`` and ``,`` instructions.
@@ -71,18 +77,26 @@ def run_region(buf, ip, h0, h1, k):
         if c == 62:        # '>'
             h0 += 1
             if h0 >= n:
+                if not wrap_heads:
+                    return steps + 1, ncopy, TERM_OFF_REGION
                 h0 -= n
         elif c == 60:      # '<'
             h0 -= 1
             if h0 < 0:
+                if not wrap_heads:
+                    return steps + 1, ncopy, TERM_OFF_REGION
                 h0 += n
         elif c == 125:     # '}'
             h1 += 1
             if h1 >= n:
+                if not wrap_heads:
+                    return steps + 1, ncopy, TERM_OFF_REGION
                 h1 -= n
         elif c == 123:     # '{'
             h1 -= 1
             if h1 < 0:
+                if not wrap_heads:
+                    return steps + 1, ncopy, TERM_OFF_REGION
                 h1 += n
         elif c == 43:      # '+'
             buf[h0] = (buf[h0] + 1) & 255
@@ -132,7 +146,7 @@ def run_region(buf, ip, h0, h1, k):
     return steps, ncopy, TERM_BUDGET
 
 
-def run_region_py(buf, ip, h0, h1, k):
+def run_region_py(buf, ip, h0, h1, k, wrap_heads=True):
     """Pure-Python reference implementation of :func:`run_region`.
 
     Kept deliberately naive; the test-suite cross-checks the compiled kernel
@@ -145,14 +159,18 @@ def run_region_py(buf, ip, h0, h1, k):
         if ip < 0 or ip >= n:
             return steps, ncopy, TERM_OFF_REGION
         c = int(buf[ip])
-        if c == OP_H0_INC:
-            h0 = (h0 + 1) % n
-        elif c == OP_H0_DEC:
-            h0 = (h0 - 1) % n
-        elif c == OP_H1_INC:
-            h1 = (h1 + 1) % n
-        elif c == OP_H1_DEC:
-            h1 = (h1 - 1) % n
+        if c in (OP_H0_INC, OP_H0_DEC, OP_H1_INC, OP_H1_DEC):
+            delta = 1 if c in (OP_H0_INC, OP_H1_INC) else -1
+            head = h0 if c in (OP_H0_INC, OP_H0_DEC) else h1
+            head += delta
+            if not 0 <= head < n:
+                if not wrap_heads:
+                    return steps + 1, ncopy, TERM_OFF_REGION
+                head %= n
+            if c in (OP_H0_INC, OP_H0_DEC):
+                h0 = head
+            else:
+                h1 = head
         elif c == OP_INC:
             buf[h0] = (int(buf[h0]) + 1) % 256
         elif c == OP_DEC:

@@ -33,6 +33,12 @@ class Config:
     kymo_width: int = 4096        # bytes of memory recorded per kymograph row
     zlib_level: int = 9
 
+    # "wrap" (default): heads wrap modulo the region, so a head move is never
+    # a termination condition.  "halt": a head move that would leave the region
+    # ends the run instead.  Both are readings of "heads are confined"; the
+    # default is the one the rest of this repo's results use.
+    head_bound: str = "wrap"
+
     # stop early once a takeover is detected (0 = disabled; run all epochs).
     # The detector is the one in soup.analyze: high-order entropy at least
     # HOE_RISE above its epoch-0 value for SUSTAIN consecutive snapshots.
@@ -90,6 +96,8 @@ def build_config(args):
 def validate(cfg):
     if cfg.mode not in ("ring", "bff"):
         raise SystemExit("mode must be 'ring' or 'bff'")
+    if cfg.head_bound not in ("wrap", "halt"):
+        raise SystemExit("head_bound must be 'wrap' or 'halt'")
     if cfg.mode == "ring":
         if cfg.M < 2 * cfg.R + 1:
             raise SystemExit("M must be at least 2R+1")

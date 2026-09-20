@@ -164,3 +164,40 @@ def test_rerunning_the_same_command_gives_the_same_csv(tmp_path):
     assert body(str(tmp_path / "a")) == body(str(tmp_path / "b"))
     assert (np.load(str(tmp_path / "a" / "kymograph.npy")) ==
             np.load(str(tmp_path / "b" / "kymograph.npy"))).all()
+
+
+def test_head_bound_reaches_the_kernel():
+    """A ring tiled with '[<]' walks head0 off the window on every tick."""
+    def run(bound):
+        cfg = Config(mode="ring", seed=7, epochs=0, M=2048, R=64, k=2048,
+                     mu=0.0, head_bound=bound)
+        soup = Soup(cfg)
+        soup.flat[:] = np.frombuffer(b"[<]" * (2048 // 3 + 1),
+                                     dtype=np.uint8)[:2048]
+        soup.advance(1)
+        from soup.core import STAT_RUNS, STAT_STEPS
+        return (soup.stats[STAT_STEPS] / soup.stats[STAT_RUNS],
+                tuple(int(v) for v in soup.stats[3:6]))
+
+    # '[<]' writes nothing, so memory is identical either way; what differs is
+    # how long the machine survives -- wrap spins until the budget, halt stops
+    # as soon as head0 steps past the window edge
+    wrap_steps, wrap_terms = run("wrap")
+    halt_steps, halt_terms = run("halt")
+    assert wrap_steps == 2048                     # whole step budget
+    assert halt_steps < 200
+    assert wrap_terms[0] > 0 and wrap_terms[1] == 0    # budget, never off-region
+    assert halt_terms[1] > 0 and halt_terms[0] == 0    # always off-region
+    assert run("halt") == (halt_steps, halt_terms)     # still reproducible
+
+
+def test_bad_head_bound_is_rejected():
+    class Args:
+        pass
+    args = Args()
+    args.config = None
+    for f in Config.__dataclass_fields__:
+        setattr(args, f, None)
+    args.head_bound = "bounce"
+    with pytest.raises(SystemExit):
+        build_config(args)

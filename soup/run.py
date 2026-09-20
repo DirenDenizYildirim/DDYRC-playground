@@ -72,10 +72,12 @@ class Soup:
         t0 = time.perf_counter()
         if cfg.mode == "ring":
             m = core.ring_chunk(self.mem, self.buf, n_epochs, cfg.ticks_per_epoch,
-                                cfg.R, cfg.k, cfg.mu, self.state, self.stats)
+                                cfg.R, cfg.k, cfg.mu, self.state, self.stats,
+                                cfg.head_bound == "wrap")
         else:
             m = core.bff_chunk(self.mem, self.buf, self.perm, n_epochs,
-                               cfg.k, cfg.mu, self.state, self.stats)
+                               cfg.k, cfg.mu, self.state, self.stats,
+                               cfg.head_bound == "wrap")
         dt = time.perf_counter() - t0
         self.sim_s += dt
         self.mutations += int(m)

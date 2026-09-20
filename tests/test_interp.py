@@ -242,3 +242,67 @@ def test_random_programs_match_the_reference_implementation(seed):
     ref = buf.copy()
     assert run_region(buf, 0, 0, 0, 5000) == run_region_py(ref, 0, 0, 0, 5000)
     assert np.array_equal(buf, ref)
+
+
+# --- the other reading of "confined": halt instead of wrap --------------------
+
+def test_halt_mode_ends_the_run_when_head0_leaves_the_region():
+    buf = build(b"<+", n=8)
+    steps, _, term = run_region(buf, 0, 0, 0, K, False)
+    assert (steps, term) == (1, TERM_OFF_REGION)
+    assert not buf[7]                      # the '+' never ran
+
+
+def test_halt_mode_ends_the_run_when_head1_leaves_the_region():
+    buf = build(b"{.", n=8)
+    steps, _, term = run_region(buf, 0, 0, 0, K, False)
+    assert (steps, term) == (1, TERM_OFF_REGION)
+
+
+def test_halt_mode_allows_moves_that_stay_inside():
+    buf = build(b">>>+", n=8)
+    steps, _, term = run_region(buf, 0, 0, 0, K, False)
+    assert term == TERM_OFF_REGION         # ran off the end normally
+    assert buf[3] == ord("+") + 1
+
+
+def test_wrap_and_halt_agree_while_no_head_leaves_the_region():
+    for prog in (b">}+.", b">>}}-,", b"}}}.", b"<>{}"):
+        a = build(prog, n=32)
+        b = build(prog, n=32)
+        # both heads start mid-region, so none of these programs reach an edge
+        assert run_region(a, 0, 5, 5, K, True) == run_region(b, 0, 5, 5, K, False)
+        assert np.array_equal(a, b)
+
+
+def test_without_a_loop_the_head_and_the_ip_reach_the_edge_together():
+    """Ring geometry: ip and head0 both start at the centre and move one cell
+    per step in opposite directions, so a straight run of '<' takes them out
+    of the region on the same step -- halt reports it one step earlier,
+    because the head moves before the next ip bounds check."""
+    n, mid = 129, 64
+    buf = np.frombuffer(b"<" * n, dtype=np.uint8).copy()
+    wrap = run_region(buf.copy(), mid, mid, mid, K, True)
+    halt = run_region(buf.copy(), mid, mid, mid, K, False)
+    assert wrap == (mid + 1, 0, TERM_OFF_REGION)
+    assert halt == (mid + 1, 0, TERM_OFF_REGION)
+
+
+def test_a_loop_lets_head0_reach_the_edge_and_the_two_modes_then_differ():
+    # '[<]' over non-zero memory walks head0 backwards without moving the ip
+    buf = np.frombuffer(b"[<]" * 40, dtype=np.uint8).copy()
+    wrap = run_region(buf.copy(), 0, 60, 60, K, True)
+    halt = run_region(buf.copy(), 0, 60, 60, K, False)
+    assert wrap[2] == TERM_BUDGET and wrap[0] == K
+    assert halt[2] == TERM_OFF_REGION and halt[0] < K
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_halt_mode_matches_the_reference_implementation(seed):
+    rng = np.random.default_rng(seed)
+    alphabet = np.frombuffer(b"<>{}-+.,[]" * 3 + bytes(range(60)), dtype=np.uint8)
+    buf = rng.choice(alphabet, size=64).astype(np.uint8)
+    ref = buf.copy()
+    assert (run_region(buf, 0, 0, 0, 5000, False) ==
+            run_region_py(ref, 0, 0, 0, 5000, False))
+    assert np.array_equal(buf, ref)

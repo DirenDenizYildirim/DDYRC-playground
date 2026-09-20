@@ -1,0 +1,9 @@
+400 epochs, mutation off, half ring seeded.  'tracked byte' is the field's majority byte.
+
+field                                  random half   -> after field half   H bits
+evolved ring field (from a finished run)     0.0038     0.0489     0.8514    5.045   INVADES
+synthetic  83% '<'  + 11% ','              0.0038     0.0631     0.8275    5.020   INVADES
+control    83% 'A'  + 11% ','              0.0041     0.0042     0.4924    6.346
+control    83% '<'  + 11% 'A'              0.0038     0.0216     0.7978    5.445
+mirror     83% '>'  + 11% ','              0.0042     0.0089     0.9269    5.153
+mirror     83% '{'  + 11% '.'              0.0037     0.0487     0.8569    5.045   INVADES

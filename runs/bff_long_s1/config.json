@@ -1,0 +1,20 @@
+{
+  "M": 65536,
+  "N": 1024,
+  "R": 128,
+  "c_min": 8,
+  "epochs": 200000,
+  "k": 8192,
+  "kymo_width": 4096,
+  "mode": "bff",
+  "mu": 0.00024,
+  "plant": 0,
+  "seed": 1,
+  "snapshot_interval": 200,
+  "tape_dump_interval": 5000,
+  "tau": 5,
+  "top_k": 10,
+  "top_window": 16,
+  "window_size": 8,
+  "zlib_level": 9
+}

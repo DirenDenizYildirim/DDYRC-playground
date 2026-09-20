@@ -35,7 +35,7 @@ def _record(stats, steps, ncopy, term):
 
 
 @njit(cache=True, nogil=True)
-def bff_epoch(pop, buf, perm, k, state, stats):
+def bff_epoch(pop, buf, perm, k, state, stats, wrap_heads=True):
     """One bff epoch: pair up every tape, run each pair, split back."""
     n = pop.shape[0]
     shuffle(perm, state)
@@ -44,14 +44,14 @@ def bff_epoch(pop, buf, perm, k, state, stats):
         b = perm[i + 1]
         buf[0:TAPE_LEN] = pop[a]
         buf[TAPE_LEN:2 * TAPE_LEN] = pop[b]
-        steps, ncopy, term = run_region(buf, 0, 0, 0, k)
+        steps, ncopy, term = run_region(buf, 0, 0, 0, k, wrap_heads)
         pop[a] = buf[0:TAPE_LEN]
         pop[b] = buf[TAPE_LEN:2 * TAPE_LEN]
         _record(stats, steps, ncopy, term)
 
 
 @njit(cache=True, nogil=True)
-def ring_tick_at(ring, buf, p, R, k, stats):
+def ring_tick_at(ring, buf, p, R, k, stats, wrap_heads=True):
     """Run one ring tick anchored at position ``p``.  Exposed for tests."""
     m = ring.shape[0]
     L = 2 * R + 1
@@ -64,7 +64,7 @@ def ring_tick_at(ring, buf, p, R, k, stats):
         n1 = m - start
         buf[:n1] = ring[start:]
         buf[n1:] = ring[:L - n1]
-    steps, ncopy, term = run_region(buf, R, R, R, k)
+    steps, ncopy, term = run_region(buf, R, R, R, k, wrap_heads)
     if start + L <= m:
         ring[start:start + L] = buf
     else:
@@ -76,26 +76,26 @@ def ring_tick_at(ring, buf, p, R, k, stats):
 
 
 @njit(cache=True, nogil=True)
-def ring_epoch(ring, buf, ticks, R, k, state, stats):
+def ring_epoch(ring, buf, ticks, R, k, state, stats, wrap_heads=True):
     m = ring.shape[0]
     for _ in range(ticks):
         p = rand_below(state, m)
-        ring_tick_at(ring, buf, p, R, k, stats)
+        ring_tick_at(ring, buf, p, R, k, stats, wrap_heads)
 
 
 @njit(cache=True, nogil=True)
-def bff_chunk(pop, buf, perm, n_epochs, k, mu, state, stats):
+def bff_chunk(pop, buf, perm, n_epochs, k, mu, state, stats, wrap_heads=True):
     n_mut = 0
     for _ in range(n_epochs):
-        bff_epoch(pop, buf, perm, k, state, stats)
+        bff_epoch(pop, buf, perm, k, state, stats, wrap_heads)
         n_mut += mutate(pop.reshape(pop.shape[0] * pop.shape[1]), mu, state)
     return n_mut
 
 
 @njit(cache=True, nogil=True)
-def ring_chunk(ring, buf, n_epochs, ticks, R, k, mu, state, stats):
+def ring_chunk(ring, buf, n_epochs, ticks, R, k, mu, state, stats, wrap_heads=True):
     n_mut = 0
     for _ in range(n_epochs):
-        ring_epoch(ring, buf, ticks, R, k, state, stats)
+        ring_epoch(ring, buf, ticks, R, k, state, stats, wrap_heads)
         n_mut += mutate(ring, mu, state)
     return n_mut
