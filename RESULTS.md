@@ -1,7 +1,9 @@
 # Results
 
-Runs: `bff` at three seeds and `ring` at three seeds, plus controls and
-sensitivity runs. Every number below comes from a committed run directory;
+Runs: the two specified experiments — `ring` for 50k epochs at three seeds and
+`bff` at three seeds — plus a planted-replicator control, a head-confinement
+sensitivity set, and four further `bff` configurations run to chase down the
+`bff` result. Every number below comes from a committed run directory;
 `python -m soup.analyze runs/...` regenerates the tables and
 `python -m soup.plots runs/...` the figures.
 
@@ -18,11 +20,17 @@ sensitivity runs. Every number below comes from a committed run directory;
   confirms this field is genuinely self-propagating and not merely an
   absorbing state: seeded into half a ring of fresh random bytes with mutation
   off, it spreads.
-* **bff — no.** Nothing took over in any run: 3 seeds × 20k epochs at N=1024,
-  3 seeds × 20k epochs at N=8192, and one run of 200k epochs at N=1024. This
-  is expected rather than alarming, for a reason given below, and the
-  interpreter and the metrics are separately verified to detect a takeover
-  when one happens.
+* **bff — no, in any of ten runs, including three at a matched interaction
+  budget.** Nothing took over at N=1024 (3 seeds × 20k epochs), N=8192
+  (3 seeds × 20k), N=1024 × 200k epochs, or N=32768 × 64k epochs
+  (3 seeds, 1.05e9 pairwise interactions each — the budget at which the
+  reference paper reports a 40% transition rate). The interpreter and the
+  metrics are separately verified to detect a takeover when one happens, so
+  this is a real negative, but at 3 seeds against a 40% rate it is also
+  **not a failed validation**: three misses have probability 0.6³ ≈ 0.22 even
+  if the process here matched the reference exactly. The honest verdict is
+  that the published emergence result was **not reproduced, and not
+  contradicted either**. See below for what would settle it.
 
 **At what epoch?** In the ring, high-order entropy crosses 0.5 bits/byte at
 epoch 250–300 and 1.0 at epoch 850–1450; order-0 entropy has fallen below 4.0
@@ -83,7 +91,7 @@ reading the bff result.
 
 ---
 
-## bff: no spontaneous takeover, and why that is the expected outcome
+## bff: no spontaneous takeover in ten runs
 
 | run | N | epochs | interactions | HOE final | HOE max | H final | A(t) | takeover |
 |---|---|---|---|---|---|---|---|---|
@@ -94,16 +102,52 @@ reading the bff result.
 | bff_n8192_s2 | 8192 | 20000 | 8.2e7 | 0.320 | 0.576 | 7.514 | 2230 | no |
 | bff_n8192_s3 | 8192 | 20000 | 8.2e7 | 0.320 | 0.597 | 7.527 | 2410 | no |
 | bff_long_s1 | 1024 | 200000 | 1.0e8 | 0.466 | 0.694 | 7.490 | 262 | no |
+| bff_n32768_s1 | 32768 | 64000 | **1.05e9** | 0.292 | 0.589 | 7.487 | 569 | no |
+| bff_n32768_s2 | 32768 | 64000 | **1.05e9** | 0.335 | 0.564 | 7.510 | 560 | no |
+| bff_n32768_s3 | 32768 | 64000 | **1.05e9** | 0.290 | 0.586 | 7.526 | 556 | no |
 
 The reference result (Agüera y Arcas et al. 2024) uses a soup of **2^17 = 131072
 tapes** and reports that **40% of runs show a state transition within 16k
 epochs** — i.e. even at full scale, most runs do not transition in that window.
-16k epochs at 2^17 tapes is about **1.1e9 pairwise interactions**. The runs in
-the table above are well short of that budget, so finding
-no transition in them is the outcome the published numbers predict, not
-evidence of a broken interpreter: they fall 11× to 110× short.
+16k epochs at 2^17 tapes is about **1.1e9 pairwise interactions**. The first
+seven rows of the table fall 11× to 110× short of that budget, so finding no
+transition in them is the outcome the published numbers predict rather than
+evidence of a broken interpreter.
 
-<!--SCALE-->
+The last three rows close that gap: N=32768 for 64000 epochs is 1.05e9
+interactions, matching the reference budget to within 5%. All three seeds ran
+to completion (44 minutes each) with no transition — peak high-order entropy
+0.56–0.59 against the 5.5 a verified takeover produces, order-0 entropy still
+7.49–7.53, and the ten most frequent 16-byte windows at the end are
+constant-byte runs (`>>>>>>>>>>>>>>>>`, 591 occurrences in a 2 MiB soup, then
+`;;;;;;;;;;;;;;;;`, `::::::::::::::::` — the ±1 neighbours of `<`), not program
+text.
+
+Three seeds against a reported 40% per-run rate is weak evidence either way:
+P(0 of 3) = 0.22 under the reference's own numbers. So this does **not**
+establish a discrepancy, and it does not establish agreement. What it does
+establish is that the substrate is not inert — a planted replicator fixates
+here in ~20 epochs and every metric screams — so the open question is about
+the *rate of spontaneous origination*, not about whether replication works.
+
+Two caveats on the matching, stated because they are not controlled for:
+
+* The budget was matched on **interactions**, not on soup size. The reference
+  uses 2^17 tapes for 16k epochs; these runs use 2^15 tapes for 64k epochs.
+  If the hazard of a replicator arising scales with interactions, the two are
+  equivalent; if it scales with the number of independent *sites*, these runs
+  have 4× fewer chances. (Each tape here accumulates 4× more personal history,
+  which should if anything help, but that is an argument, not a measurement.)
+* The reference's rule for a head moving out of bounds is not stated in the
+  material available here, and bff was not tested under both readings at
+  length. In ring mode the two readings agree; in bff they might not.
+
+Settling it properly needs either a soup of 2^17 tapes — about 3.5 hours per
+seed at this throughput once the pre-transition phase alone is counted, and far
+longer if a transition occurs and every run starts using the full 8192-step
+budget — or ~10 seeds at the present scale to put a useful confidence interval
+on a 40% rate. Neither fits the time available here, and neither should be
+skipped before claiming the reference result reproduces.
 
 What the bff soups *do* show is the same chemistry the ring runs push to
 completion, just never reaching fixation: `<` is enriched to ~7% of memory
@@ -277,7 +321,12 @@ values. Two reasons, both of which are measurement artifacts:
 2. **`tau` is counted in snapshots, not epochs.** The same bff configuration
    logged every 20 epochs reaches A(t) = 547, and logged every 200 epochs
    reaches A(t) = 262 — a factor of two from the logging cadence alone
-   (`bff_s1` vs `bff_long_s1`, which is also 10× longer).
+   (`bff_s1` vs `bff_long_s1`, which is also 10× longer). The cadence also
+   decides whether A(t) *appears* to plateau: at a 200-epoch cadence the
+   N=32768 runs slow from 15 new windows per 1000 epochs in their first half
+   to 2.4 in their second, which reads as a plateau, while the ring runs at a
+   50-epoch cadence are still adding 16 per 1000 at epoch 50000. Nothing about
+   the soups explains that difference; the logging interval does.
 
 A(t) as specified answers "how many distinct 8-byte windows have ever been
 abundant for a while", and that question has a large answer in a soup with a
@@ -289,13 +338,16 @@ two-letter alphabet. It is not a novelty measure in this regime.
 
 Stated plainly, including the ones that turned out to be neither.
 
-1. **The bff non-result is not a bug.** It was chased down rather than
-   reported: the interpreter supports exact self-replication (verified), the
-   dynamics amplify a planted replicator to fixation in ~20 epochs (verified),
-   the metrics register that takeover unmistakably (verified), and the
-   published reference reports only a 40% transition rate at a soup size 128×
-   larger than the primary configuration here. The runs are simply 10–100×
-   short of the interaction budget where transitions are reported.
+1. **The bff non-result is not a bug, but it is not a clean validation
+   either.** It was chased down rather than reported: the interpreter supports
+   exact self-replication (verified), the dynamics amplify a planted replicator
+   to fixation in ~20 epochs (verified), the metrics register that takeover
+   unmistakably (verified). Ten runs, three of them at the reference's own
+   interaction budget, produced no spontaneous transition. Against a reported
+   40% per-run rate that is an unremarkable outcome (p ≈ 0.22 for three
+   misses), so the correct statement is that bff mode has **not yet validated
+   the interpreter against the published result** — it has only shown that
+   nothing in the substrate prevents the result.
 2. **A single planted replicator usually goes extinct** (5 of 8 seeds). This
    looked like a failure of the bff driver at first. It is founder
    stochasticity: the hand-written replicator only copies when the random
@@ -338,6 +390,7 @@ concurrently on four cores — so roughly 25× inside the budget.**
 | bff N=1024, 3 seeds in parallel | 20000 | 57–64 s | 30–36 s | 315–348 |
 | bff N=8192, 3 seeds in parallel | 20000 | 359 s | 181 s | 56 |
 | bff N=1024, single process | 200000 | 248 s | 228 s | 805 |
+| bff N=32768, 3 seeds in parallel | 64000 | 2659–2668 s | 2306–2326 s | ~24 |
 
 `python -m soup.bench`, single process, measured on the *random* soup — the
 slowest phase for the ring, because random memory is full of brackets and runs
@@ -366,6 +419,15 @@ for s in 1 2 3; do
 done
 python -m soup.run --config configs/bff.json --seed 1 --epochs 400 --plant 20 \
                    --snapshot-interval 10 --out runs/bff_plant20_s1
+# the matched-budget bff runs (about 45 minutes each)
+for s in 1 2 3; do
+  python -m soup.run --config configs/bff_scale.json --seed $s --out runs/bff_n32768_s$s
+done
+# the head-confinement sensitivity set
+for s in 1 2 3; do
+  python -m soup.run --config configs/ring.json --seed $s --head-bound halt \
+                     --out runs/ring_halt_s$s
+done
 python experiments/invasion.py --epochs 400
 python -m soup.plots   runs/ring_s1 runs/ring_s2 runs/ring_s3 --out analysis/ring
 python -m soup.analyze runs/ring_s1 runs/ring_s2 runs/ring_s3
