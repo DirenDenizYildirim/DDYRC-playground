@@ -1,0 +1,55 @@
+# epoch 0  H=7.9999 C=8.0025 HO=-0.0001  A(t)=0
+         1  ...#....K36{...K  ffffe023a2b5ff9b4b33367bd9f9bf4b
+         1  ...g|.J.....X.N.  ffffce677ca44aeedfb9e81258b54eb9
+         1  ...Cw.n;..o.h.U.  ffffcd4377fc6e3bb8fe6faf680d55f4
+         1  ...c.4....-E...$  ffffc163813416c29ef22d4588190b24
+         1  ....>..<...W..g.  ffffbead3ee7a93cd8c8a557dddd67ec
+         1  ...]REe......{1G  ffffb95d524565fa16d983a80b7b3147
+         1  ......X....).h..  ffffa6e2afa758c1fdbc8e29d3681112
+         1  .......+.....O..  ffffa686b2b6862b97a6c8c3c04f9913
+         1  .....9...|e.f...  ffff8edeae392ebbc57c65a966eebc04
+         1  ..............==  ffff8ca4c7c51a1804c00a818e8e3d3d
+# epoch 250  H=7.9987 C=7.9585 HO=-0.0013  A(t)=0
+       355  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       213  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       119  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+        65  4444444444444444  34343434343434343434343434343434
+        64  qqqqqqqqqqqqqqqq  71717171717171717171717171717171
+        57  ................  8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d
+        55  {{{{{{{{{{{{{{{{  7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b
+        53  ................  1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c
+        50  ................  fefefefefefefefefefefefefefefefe
+        46  ................  dededededededededededededededede
+# epoch 500  H=7.9974 C=7.9444 HO=-0.0026  A(t)=0
+       200  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       180  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       115  ................  8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c
+       109  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+        74  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+        68  ................  f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3f3
+        55  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+        53  ................  0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d
+        47  ................  93939393939393939393939393939393
+        46  8888888888888888  38383838383838383838383838383838
+# epoch 750  H=7.9960 C=7.9329 HO=0.0564  A(t)=0
+       328  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+       159  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       108  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+        83  xxxxxxxxxxxxxxxx  78787878787878787878787878787878
+        66  ................  80808080808080808080808080808080
+        63  dddddddddddddddd  64646464646464646464646464646464
+        61  ................  c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7
+        61  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+        55  ................  93939393939393939393939393939393
+        55  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+# epoch 1000  H=7.9948 C=7.9273 HO=0.0594  A(t)=0
+       154  [[[[[[[[[[[[[[[[  5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b
+       151  ,,,,,,,,,,,,,,,,  2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c
+       127  ]]]]]]]]]]]]]]]]  5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d
+        91  ................  2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e2e
+        78  bbbbbbbbbbbbbbbb  62626262626262626262626262626262
+        78  <<<<<<<<<<<<<<<<  3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c
+        56  gggggggggggggggg  67676767676767676767676767676767
+        55  \\\\\\\\\\\\\\\\  5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c
+        50  ................  acacacacacacacacacacacacacacacac
+        50  {{{{{{{{{{{{{{{{  7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b

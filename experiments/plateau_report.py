@@ -140,6 +140,21 @@ def verdict(entry, control_band, control_values=None, alpha=0.05):
     return "inside the band", None, None
 
 
+def holm(pvalues):
+    """Holm-Bonferroni adjusted p-values, in the input order.
+
+    Each seed contributes about twenty comparisons and there are four
+    seeds, so at alpha = 0.05 roughly four spurious hits are expected
+    across the family.  Anything quoted as a result has to survive this.
+    """
+    idx = sorted(range(len(pvalues)), key=lambda i: pvalues[i])
+    m, out, running = len(pvalues), [0.0] * len(pvalues), 0.0
+    for rank, i in enumerate(idx):
+        running = max(running, min(1.0, (m - rank) * pvalues[i]))
+        out[i] = running
+    return out
+
+
 def md_table(rows, headers):
     out = ["| " + " | ".join(headers) + " |",
            "|" + "|".join("---" for _ in headers) + "|"]
@@ -160,6 +175,7 @@ def main(argv=None):
 
     summary, md = {}, ["# Plateau assays", ""]
     groups, adv_first, adv_prev = [], [], []
+    family = []          # every (seed, kind, epoch, p) for the Holm correction
     for seed in a.seeds:
         tag = "plateau_s%d" % seed
         d = os.path.join(a.assays, tag)
@@ -175,9 +191,13 @@ def main(argv=None):
             pv = g["vs_prev"].get(epoch)
             ve, te, pe = verdict(e, cb, cv)
             e["welch_t"], e["welch_p"] = te, pe
+            if pe is not None:
+                family.append((seed, "vs_first", epoch, pe))
             if pv:
                 vp, tp, pp = verdict(pv, cb, cv)
                 pv["welch_t"], pv["welch_p"] = tp, pp
+                if pp is not None:
+                    family.append((seed, "vs_prev", epoch, pp))
             rows.append([epoch, "%.4f +/- %.4f" % (e["mean"], e["sem"] or 0),
                          ve,
                          "%.4f +/- %.4f" % (pv["mean"], pv["sem"] or 0)
@@ -270,6 +290,24 @@ def main(argv=None):
                md_table(rows, ["run", "epoch", "colonisation vs random",
                                "soup-vs-soup control", "distinct tapes",
                                "conserved bytes"]), ""]
+
+    if family:
+        adj = holm([f[3] for f in family])
+        summary["holm"] = [{"seed": f[0], "kind": f[1], "epoch": f[2],
+                            "p": f[3], "p_holm": round(q, 6)}
+                           for f, q in zip(family, adj)]
+        survivors = [r for r in summary["holm"] if r["p_holm"] < 0.05]
+        md += ["## multiple comparisons", "",
+               "%d tests across %d seeds.  Holm-Bonferroni at 0.05 leaves "
+               "%d of them." % (len(family), len(a.seeds), len(survivors)), ""]
+        if survivors:
+            md += [md_table([[r["seed"], r["kind"], r["epoch"],
+                              "%.3g" % r["p"], "%.3g" % r["p_holm"]]
+                             for r in survivors],
+                            ["seed", "comparison", "epoch", "p", "p (Holm)"]),
+                   ""]
+        else:
+            md += ["Nothing survives the correction.", ""]
 
     with open(os.path.join(a.out, "summary.json"), "w") as fh:
         json.dump(summary, fh, indent=2)
