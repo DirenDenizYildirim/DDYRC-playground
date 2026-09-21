@@ -211,7 +211,7 @@ def byte_composition(run_dir):
     """Frequency of each instruction byte over time, from the raw .npy dumps."""
     import glob
     epochs, freqs, noop = [], [], []
-    for f in sorted(glob.glob(os.path.join(run_dir, "snapshots", "*.npy"))):
+    for f in sorted(glob.glob(os.path.join(run_dir, "snapshots", "epoch_*.npy"))):
         mem = np.load(f).reshape(-1)
         counts = np.bincount(mem, minlength=256) / mem.size
         epochs.append(int(os.path.basename(f)[6:-4]))

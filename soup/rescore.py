@@ -41,7 +41,7 @@ def rescore(run_dir, tau_epochs, null_ratio, compressor="brotli6"):
     trackers = (metrics.PersistenceTracker(cfg["c_min"], tau_epochs, null_ratio, w),
                 metrics.PersistenceTracker(cfg["c_min"], tau_epochs, 0.0, w))
     rows = []
-    for path in sorted(glob.glob(os.path.join(run_dir, "snapshots", "*.npy"))):
+    for path in sorted(glob.glob(os.path.join(run_dir, "snapshots", "epoch_*.npy"))):
         epoch = int(os.path.basename(path)[6:-4])
         mem = np.load(path).reshape(-1)
         h = metrics.shannon_entropy_bits(mem)
