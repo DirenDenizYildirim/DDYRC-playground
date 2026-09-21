@@ -159,6 +159,84 @@ planted-replicator control. Every number comes from a committed run directory;
 
 ---
 
+## The instrumentation, and the three ways it was wrong first
+
+Everything in section 1 rests on four new measurements. Each one had a flaw
+that would have produced a confident wrong answer, and each flaw was found by
+running a control that had to come out a particular way.
+
+**Provenance labels** (`soup/interp.py`). A second byte array the same shape as
+memory. `.` and `,` copy a byte's label with the byte; every other instruction,
+and mutation, leave the destination cell's label alone. No instruction can read
+a label. The control is that a labelled run must be byte-identical to an
+unlabelled one — memory, every counter, and every column of the metric row —
+and `tests/test_labels.py` asserts it at three seeds. A second test relabels a
+population and checks the trajectory is unchanged and only the bookkeeping
+mirrors.
+
+**The competition assay** (`soup/assay.py`). Half the tapes from soup A, half
+from B, labelled, 300 epochs, five replicates. Two controls: a dead soup of
+no-ops must never gain ground, and — the one that mattered — **A against
+itself**. The self-control lands anywhere in 0.40–0.64. Without it the raw
+fractions look like signal at every second comparison; with it, 76 of 84
+comparisons are noise. The range test I wrote first was the opposite error,
+so conservative it would have missed seed 14 entirely; the Welch test against
+pooled self-controls, Holm-corrected, is what the numbers above use.
+
+**Motif families** (`soup/motifs.py`). The dominant 16-byte windows of a
+taken-over soup are mostly shifts of one string, so counting windows overstates
+how much is there. Windows within edit distance 8 are one family, and a
+family's *coverage* is the fraction of tapes carrying it — a frequency with a
+denominator worth quoting. The threshold is not a guess: `null_distances()`
+draws 2000 pairs from a soup's own byte-frequency null, and the smallest
+distance any unrelated pair reached was 12. My first attempt used 4, which
+split one obvious motif into four families.
+
+Sweep counting is reported but should be read carefully. The detector fires 26
+times in seed 14 and 2–7 times in the others, and most of those are the
+representative window of a quasispecies drifting, not a selective sweep. The
+one that coincides with the assay's step reaches 0.443 coverage where every
+other leader in that run sits at 0.10–0.17. **Coverage magnitude separates the
+two; the sweep count does not.**
+
+**Per-snapshot post-takeover measurements** (`soup/posthoc.py`). Self-sufficiency
+pairs a soup tape with a fresh uniform-random tape; *colonisation* is the share
+of the resulting 128 bytes carrying the soup tape's label, 0.5 when neither
+side gains. Controls are soup-vs-soup and random-vs-random. Two things went
+wrong here:
+
+- The soup-vs-soup control read 0.4728 and looked like a real asymmetry. It is
+  not: a single pair run can hand over most of its 128 bytes, so the per-pair
+  spread is wide, and quoting the standard error puts the control at 0.5.
+- Worse, every snapshot was analysed with the same seed, so every one reused
+  the same draw pattern. That pinned the control at 0.522–0.524 across all
+  thirty snapshots of a run — stable enough to look like precision — when five
+  different seeds on a *single* soup give 0.4985, 0.5061, 0.5070, 0.5092,
+  0.5225. Seeding per snapshot put the control back to 0.4996 ± 0.0113 and made
+  the across-snapshot spread an honest error bar.
+
+For *where the variation sits*, tapes are aligned on the leading family's
+representative window and per-offset byte entropy is reported. Offsets 0–15 are
+the seed window, so low entropy there is circular and is shown only for
+completeness; the conserved width outside that range is the measurement, and it
+runs to 33–53 bytes — well past the 16-byte seed. That column also needed a
+floor: before it required 256 tapes per offset, a *pre-takeover* soup whose
+leading family covers 0.1% of tapes reported a 23-byte conserved region built
+from 40 nearly identical tapes. It now reports nothing there, which is correct.
+
+**Resuming.** The runs in section 1 could not have been completed without it:
+background work in this environment does not survive an idle period, and the
+first attempt at these continuations died 2 500 epochs in. A run now resumes
+from its last tape dump and carries on the same `metrics.csv`, `patterns.log`
+and kymograph — rows past the resume point dropped, the row at it kept for the
+counters it carries, and A(t) reloaded from tracker state saved beside every
+dump. The test tears a run at epoch 20, resumes it, and asserts the metric
+rows, the kymograph and the pattern log are identical to an uninterrupted run.
+The first set of dumps was discarded rather than resumed from, because it
+carried no tracker state and resuming would have reset A(t) mid-series.
+
+---
+
 ## 2. Which configurations produce a takeover at all
 
 **One family of configurations produces a program-class takeover: bff pairing
