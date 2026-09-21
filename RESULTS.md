@@ -963,7 +963,11 @@ passes over ~65k windows at every snapshot.
 
 Every run directory holds `config.json`, `metrics.csv` (one row per snapshot),
 `patterns.log` (top-10 16-byte windows per snapshot, printable and hex),
-`summary.json` and raw `.npy` memory dumps. Runs stopped by hand carry
+`summary.json` and raw `.npy` memory dumps. Labelled runs also dump
+`labels_%08d.npy` beside each tape dump, and every run now writes
+`trackers_%08d.npz` so A(t) survives a resume. Analysis products live under
+`analysis/plateau/` (92 competition assays), `analysis/motifs/`,
+`analysis/posthoc/` and `analysis/plateau_report/`. Runs stopped by hand carry
 `stopped_early.json` instead of a summary, saying why and at which epoch.
 Runs made before the metric changes also carry `rescored.csv`.
 
@@ -981,6 +985,10 @@ Runs made before the metric changes also carry `rescored.csv`.
 | `blocks_d8_s*` | blocks | 8192 | d=8 | 3 | 20000 |
 | `compat_cubff_s*` | bff | 32768 | cubff | 17 | 64000 |
 | `compat_noheads_s*` | bff | 32768 | cubff_noheads | 7 | 16000 |
+| `plateau_s*` | bff | 32768 | cubff, resumed, labelled | 4 | +50000 each |
+| `blocks_ch_d2_s*` | blocks | 32768 | d=2, cubff head rule | 3 | 16000 |
+| `blocks_ch_d8_s*` | blocks | 32768 | d=8, cubff head rule | 3 | 16000 |
+| `ring_datahead_s*` | ring | 65536 | heads from memory | 3 | 50000 |
 | `ring_s*` | ring | 65536 | — | 3 | 50000 |
 | `ring_halt_s*` | ring | 65536 | head-bound=halt | 3 | 50000 |
 | `ringv_ctrl_s*` | ring | 65536 | — | 3 | 50000 |
@@ -1028,6 +1036,24 @@ for s in 1 2 3; do
   python -m soup.run --config configs/blocks.json --d 2 --seed $s --out runs/blocks_d2_s$s
   python -m soup.run --config configs/ring.json --seed $s --no-copy 1 --out runs/ringv_nocopy_s$s
   python -m soup.run --config configs/ring.json --seed $s --indel 1   --out runs/ringv_indel_s$s
+done
+# section 1: continue four takeovers for 50k epochs each, then assay them
+python -m experiments.resume --jobs 4          # resumable; re-run after any interruption
+python -m experiments.plateau_suite runs/plateau_s1{2,3,4} runs/plateau_s19 \
+                                   --out analysis/plateau --jobs 4
+for s in 12 13 14 19; do
+  python -m soup.motifs  runs/plateau_s$s --out analysis/motifs/s$s
+  python -m soup.posthoc runs/plateau_s$s --out analysis/posthoc/s$s --every 2
+done
+python -m experiments.plateau_report --out analysis/plateau_report
+# section 3: origin rate under local pairing, cubff head rule
+for d in 2 8; do for s in 1 2 3; do
+  python -m soup.run --config configs/blocks_cubffhead.json --d $d --seed $s \
+                     --out runs/blocks_ch_d${d}_s$s
+done; done
+# the boundary-free ring with heads read from memory
+for s in 1 2 3; do
+  python -m soup.run --config configs/ring_datahead.json --seed $s --out runs/ring_datahead_s$s
 done
 python -m soup.analyze --rates --finished-only runs/compat_*/
 python -m soup.plots   runs/ring_s1 runs/ring_s2 runs/ring_s3 --out analysis/ring
