@@ -551,11 +551,40 @@ Three seeds each, 50000 epochs, M = 65536, R = 128.
 | **a. control** | crystal ×3 | 1.279, 2.120, 1.280 | 0.006, 0.965, 0.015 | 128.2–128.8 | 0.00–0.09 | 0.82–0.85 | 362–2214 | 1967–2493 |
 | **b. no copy** | random ×3 | 7.975–7.977 | −0.025 – −0.023 | 1864–2083 | 0.946–0.952 | **0.000** | **0** | **0** |
 | **c. indel** | crystal ×2, mixed ×1 | 2.483, 2.567, 2.853 | 0.636, 0.912, 1.000 | 128.6–179.8 | 0.00–0.32 | 0.79–0.85 | 760–2163 | 2067–2340 |
+| **d. data-driven heads** | mixed ×3 | 6.383, 6.493, 6.467 | 0.235, 0.211, 0.228 | 551–747 | 0.79–0.85 | 0.28–0.31 | **53–61** | 53–61 |
 
 **(a) Control** reproduces the earlier ring result under the new metrics, and
 the new in-loop column makes the crystal diagnosis direct rather than inferred:
 **0.00** of steps are spent re-running an instruction, against 0.95 in a random
 soup. The brackets really are gone and every run really is a straight walk.
+
+**(d) The data-driven head rule stops the crystal without producing a
+program.** This is the one variant where cubff's own convention is carried over
+to the boundary-free geometry: `head0` and `head1` are read from `mem[p]` and
+`mem[p + 1]` and execution starts at `p + 2` — exactly the rule that decides
+the transition rate in bff. Three seeds, 50 000 epochs each.
+
+The end state is neither of the two the ring reached before. It is **not** the
+crystal: order-0 entropy ends at 6.38–6.49 against 1.28 for the control ring,
+and 0.79–0.85 of steps are spent re-running an instruction against 0.00 for a
+crystal, so the brackets are still there and runs still loop. It is **not**
+random either: entropy is a bit and a half below the 7.98 of the no-copy ring,
+and 28–31% of runs still copy. And it is emphatically not a program:
+high-order entropy is 0.21–0.24 where a program-class takeover reaches 1.0 and
+above, and **A(t) ends at 53–61** against 72 637–86 138 for the bff
+continuations. The classifier calls all three *mixed*.
+
+So the head rule does change the boundary-free ring's fate — away from
+crystallisation — but it does not supply what bff has. Whatever separates the
+two, it is not the initial machine state alone.
+
+*A correction to my own first reading of this run.* I initially called it a
+crystal on the strength of the top-10 window log, whose first two entries are
+`01 01 01 …` and `00 00 00 …` in every seed. Those entries have counts of 1905
+and 1001 out of 65 536 windows — 2.9% and 1.5%. They are the commonest 16-mers
+in a largely disordered soup, not a dominant motif. The pattern log has no
+denominator in it and should not be read as though it did; `frac_steps_in_loop`
+and order-0 entropy, which do, say the opposite.
 
 **(b) Removing the copy primitive stops everything.** With `.` and `,` turned
 into no-ops, memory after 50000 epochs is statistically indistinguishable from
