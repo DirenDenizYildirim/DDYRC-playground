@@ -1,0 +1,653 @@
+{
+  "run": "runs/plateau_s19",
+  "window": 16,
+  "top": 200,
+  "max_dist": 8,
+  "rise": 0.1,
+  "fall": 0.05,
+  "n_sweeps": 4,
+  "sweeps": [
+    {
+      "epoch": 13000,
+      "from": 0,
+      "to": 6,
+      "from_coverage": 0.0,
+      "to_coverage": 0.138336
+    },
+    {
+      "epoch": 14000,
+      "from": 6,
+      "to": 15,
+      "from_coverage": 0.0,
+      "to_coverage": 0.124268
+    },
+    {
+      "epoch": 15000,
+      "from": 15,
+      "to": 21,
+      "from_coverage": 0.0,
+      "to_coverage": 0.104797
+    },
+    {
+      "epoch": 33000,
+      "from": 21,
+      "to": 181,
+      "from_coverage": 0.0,
+      "to_coverage": 0.110718
+    }
+  ],
+  "leader": [
+    {
+      "epoch": 12750,
+      "leader": 0,
+      "leader_coverage": 0.152405,
+      "n_families": 6
+    },
+    {
+      "epoch": 13000,
+      "leader": 6,
+      "leader_coverage": 0.138336,
+      "n_families": 6
+    },
+    {
+      "epoch": 13500,
+      "leader": 6,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 14000,
+      "leader": 15,
+      "leader_coverage": 0.124268,
+      "n_families": 6
+    },
+    {
+      "epoch": 14500,
+      "leader": 15,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 15000,
+      "leader": 21,
+      "leader_coverage": 0.104797,
+      "n_families": 6
+    },
+    {
+      "epoch": 15500,
+      "leader": 21,
+      "leader_coverage": 0.045837,
+      "n_families": 6
+    },
+    {
+      "epoch": 16000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 16500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 17000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 17500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 5
+    },
+    {
+      "epoch": 18000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 18500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 19000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 5
+    },
+    {
+      "epoch": 19500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 20000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 20500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 21000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 21500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 22000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 22500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 23000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 23500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 24000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 24500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 25000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 25500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 26000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 26500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 27000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 27500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 28000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 28500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 29000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 29500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 30000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 30500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 31000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 31500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 32000,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 32500,
+      "leader": 21,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 33000,
+      "leader": 181,
+      "leader_coverage": 0.110718,
+      "n_families": 6
+    },
+    {
+      "epoch": 33500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 34000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 34500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 35000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 35500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 36000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 36500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 37000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 37500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 38000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 5
+    },
+    {
+      "epoch": 38500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 39000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 5
+    },
+    {
+      "epoch": 39500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 40000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 40500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 41000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 41500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 42000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 5
+    },
+    {
+      "epoch": 42500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 43000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 43500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 44000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 44500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 45000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 45500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 46000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 46500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 47000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 47500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 48000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 48500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 49000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 49500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 50000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 50500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 51000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 51500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 52000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 52500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 53000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 53500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 54000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 54500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 55000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 55500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 56000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 56500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 57000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 57500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 58000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 58500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 59000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 59500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 60000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 60500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 61000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 5
+    },
+    {
+      "epoch": 61500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 62000,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 62500,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    },
+    {
+      "epoch": 62750,
+      "leader": 181,
+      "leader_coverage": 0.0,
+      "n_families": 6
+    }
+  ]
+}
