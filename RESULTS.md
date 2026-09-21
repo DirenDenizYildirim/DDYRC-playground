@@ -1,6 +1,6 @@
 # Results
 
-**Leading question, answered first: after a takeover, does evolution measurably
+**The leading question, answered first: after a takeover, does evolution measurably
 continue, and for how long?** It continues in **one of four seeds**, as a
 **single discrete step** about twenty thousand epochs after the takeover, after
 which it **stops**. In the other three seeds nothing measurable happens in
@@ -12,7 +12,7 @@ locality sweep and the boundary-free ring variants — follows after.
 
 ---
 
-## 1. Does evolution continue after takeover?
+## Does evolution continue after takeover?
 
 ### What was run
 
@@ -237,7 +237,7 @@ carried no tracker state and resuming would have reset A(t) mid-series.
 
 ---
 
-## 2. Which configurations produce a takeover at all
+## Which configurations produce a takeover at all
 
 **One family of configurations produces a program-class takeover: bff pairing
 with cubff's initial machine state.** Nothing else tested does.
@@ -620,7 +620,7 @@ is now a one-flag change and was not run here.
 
 ---
 
-## 3. Locality: does the takeover still originate when pairing is local?
+## Locality: does the takeover still originate when pairing is local?
 
 **No, in six runs out of six.** Blocks pairing with the cubff head rule, from
 random initial conditions, N = 32768, 16 000 epochs, three seeds at each
@@ -867,50 +867,78 @@ simply wrong.
    {−2, −1, **+3, +4**} instead of {−2, −1, +1, +2}. Caught by a test written
    after the first blocks runs had started; those runs were discarded and
    redone. No blocks number in this document comes from the buggy version.
-4. **`plot_kymograph` crashed on a run stopped by hand**, which has no final
+4. **Every snapshot of a post-takeover run was analysed with the same RNG
+   seed**, so every one reused the same pattern of draws. That pinned the
+   soup-vs-soup control at 0.522–0.524 across all thirty snapshots of a run —
+   stable enough to read as a real asymmetry — when five different seeds on a
+   *single* soup give 0.4985, 0.5061, 0.5070, 0.5092, 0.5225. Seeding per
+   snapshot puts the control back at 0.4996 ± 0.0113. Precision that comes from
+   reusing a draw is not precision.
+
+5. **`plots.py` and `rescore.py` globbed `snapshots/*.npy` and parsed the epoch
+   out of the filename by character offset.** That worked until labelled runs
+   began writing `labels_%08d.npy` beside `epoch_%08d.npy`, at which point
+   plotting a continuation died on `int('_00005500')`. Both now match
+   `epoch_*.npy` explicitly.
+
+6. **`summary.json` counted a resumed run's loaded epochs as simulated**, so
+   `epochs_per_second` was wrong by the size of the checkpoint. It now reports
+   `epochs_simulated` separately.
+
+7. **`plot_kymograph` crashed on a run stopped by hand**, which has no final
    kymograph. Now skips with a message.
 
 **A claim that was wrong:**
 
-5. **"bff_noheads never transitions" was an artefact of ten runs.** It is in
+8. **"bff_noheads never transitions" was an artefact of ten runs.** It is in
    the git history of this file. Seed 103 transitions at epoch 2750. The
    corrected statement is that both languages transition and the heads variant
    transitions several times more often (p = 0.069 comparing the compat
    languages directly, 0.014 pooling the earlier runs).
-6. **"Head confinement is load-bearing for the ring result" was also wrong**,
+9. **"Head confinement is load-bearing for the ring result" was also wrong**,
    and was corrected earlier in the same way: by implementing the alternative
    rule and measuring it rather than arguing about it.
 
 **Things that looked like bugs and were not:**
 
-7. **A single planted replicator usually goes extinct** (5 of 8 seeds). Founder
+10. **A single planted replicator usually goes extinct** (5 of 8 seeds). Founder
    stochasticity: it only copies when the pairing puts it in the first half, so
    its growth factor is ~1.5 per epoch. With 20 founders, takeover is reliable.
-8. **Mean steps per run falling to 128.5 in the ring.** Real and explainable:
+11. **Mean steps per run falling to 128.5 in the ring.** Real and explainable:
    129 steps is exactly a straight walk from `p` to the far edge, and the
    brackets have been purged. The new in-loop column makes this direct — 0.00
    of steps re-run an instruction.
-9. **A(t) rising forever in a crystal** is the metric as specified, quantified
+12. **A(t) rising forever in a crystal** is the metric as specified, quantified
    above. The null filter reduces it 3–5× but does not eliminate it, because a
    clustered `,` field genuinely is non-i.i.d.
-10. **High-order entropy ≈ 0 for a fully structured soup** is the metric
+13. **High-order entropy ≈ 0 for a fully structured soup** is the metric
     behaving as defined. It is why H is now a required companion column.
-11. **Negative high-order entropy** (−0.02 in the no-copy runs, −0.003 in one
+14. **Negative high-order entropy** (−0.02 in the no-copy runs, −0.003 in one
     halt run) is not a compression failure: it is brotli spending a few bytes
     of header and failing to beat the order-0 model on incompressible data.
 
 **Still open:**
 
-12. **Whether locality would help a soup that can transition.** The blocks
+15. **Whether locality would help a soup that can transition.** The blocks
     sweep ran our spec's head rule — the low-rate one — so it measures locality
     inside the non-transitioning regime. Blocks with `--compat cubff` head
     semantics is a one-flag change and was not run.
-13. **Why the emergent quasispecies is not self-sufficient** against fresh
+16. **Why the emergent quasispecies is not self-sufficient** against fresh
     random partners (mean motif change −0.24). It survives because its
     neighbours are relatives; whether that is a transient of the measurement
     epoch or a stable property was not established.
 
 ---
+
+**One more thing that was not a code bug but cost an hour of the budget.**
+Background processes started with `nohup` do not survive an idle period in this
+execution environment: the container suspends between turns and the work is
+lost. The first attempt at the four continuations died 2 500 epochs in, and the
+dumps it left carried no A(t) tracker state, so resuming from them would have
+reset A(t) mid-series. They were discarded and the runs restarted from the
+original checkpoints under the resumable machinery described above. Total
+compute for this round was about nine hours against a budget of eight, most of
+the overrun being that lost hour.
 
 ## Performance
 
