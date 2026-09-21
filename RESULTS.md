@@ -620,6 +620,43 @@ is now a one-flag change and was not run here.
 
 ---
 
+## 3. Locality: does the takeover still originate when pairing is local?
+
+**No, in six runs out of six.** Blocks pairing with the cubff head rule, from
+random initial conditions, N = 32768, 16 000 epochs, three seeds at each
+neighbourhood radius:
+
+| configuration | n | program-class | rate (95% CI) | H | HOE | in-loop | copy frac | A(t) |
+|---|---|---|---|---|---|---|---|---|
+| **bff, well mixed** (`--compat cubff`) | 17 | **11** | **0.65 (0.41–0.83)** | — | — | — | — | — |
+| blocks, d = 2, cubff head rule | 3 | 0 | 0.00 (0.00–0.56) | 7.977–7.979 | 0.056–0.061 | 0.905–0.907 | 0.53–0.54 | 257–333 |
+| blocks, d = 8, cubff head rule | 3 | 0 | 0.00 (0.00–0.56) | 7.936–7.941 | 0.160–0.174 | 0.899–0.903 | 0.58–0.58 | 256–259 |
+| blocks, pooled | 6 | 0 | 0.00 (0.00–0.39) | — | — | — | — | — |
+
+Every run is classified *random*: order-0 entropy within 0.07 of the 8.0
+ceiling, high-order entropy two orders below the 1.0 a program-class takeover
+reaches, and A(t) in the hundreds against tens of thousands. Against the
+well-mixed rate at the same head rule and the same N, Fisher's exact test gives
+**p = 0.0137** pooled (p = 0.074 for d = 2 alone, which three seeds cannot do
+better than).
+
+There is a hint of dose-response in the right direction: d = 8 ends with
+high-order entropy of 0.160–0.174 against 0.056–0.061 for d = 2, and a higher
+copy fraction, so a wider neighbourhood is slightly closer to the well-mixed
+case. It is a difference between two flat lines, not a transition.
+
+**What was not run, and why.** The specification asked for six seeds at each
+radius; three were run. It also asked for the four takeover checkpoints to be
+continued under blocks d = 2 with the same measurements, which was not run at
+all. Both were cut for compute: the continuations in section 1 took six hours
+of the budget on their own, and an hour of that had already been lost to the
+environment killing background work before the runs were made resumable. The
+d = 2 result on three seeds cannot reach p < 0.05 by itself even if the true
+rate is zero, so the pooled test is the one to quote. Nothing was tuned or
+re-run to get these numbers; they are the first six runs of that configuration.
+
+---
+
 ## Boundary-free ring variants
 
 Three seeds each, 50000 epochs, M = 65536, R = 128.
