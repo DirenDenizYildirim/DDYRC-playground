@@ -1,5 +1,154 @@
 # Results
 
+**Leading question, answered first: after a takeover, does evolution measurably
+continue, and for how long?** It continues in **one of four seeds**, as a
+**single discrete step** about twenty thousand epochs after the takeover, after
+which it **stops**. In the other three seeds nothing measurable happens in
+fifty thousand epochs. The evidence is a competition assay with a neutral
+control, corrected for multiple testing, and is set out immediately below.
+
+Everything else — the validation against cubff, the metric rebuild, the
+locality sweep and the boundary-free ring variants — follows after.
+
+---
+
+## 1. Does evolution continue after takeover?
+
+### What was run
+
+Four seeds whose bff/`--compat cubff` runs at N = 32768 had already produced a
+program-class takeover were resumed from the checkpoint at which the takeover
+was detected and run a further **50 000 epochs each**, well mixed, at the
+normal mutation rate, with tape dumps every 500 epochs.
+
+| run | resumed from epoch | ran to | tape dumps |
+|---|---|---|---|
+| `plateau_s12` | 5 500 | 55 500 | 101 |
+| `plateau_s13` | 5 750 | 55 750 | 102 |
+| `plateau_s14` | 7 000 | 57 000 | 101 |
+| `plateau_s19` | 12 750 | 62 750 | 102 |
+
+### The assay
+
+Saved soups were compared against each other by putting them in the same soup:
+half the tapes from A, half from B, labelled, run 300 epochs at the normal
+mutation rate, five replicates with different shuffles. The label rides along
+with `.` and `,` and **no instruction can read it**, so the measurement does
+not perturb what it measures (`tests/test_labels.py` asserts a labelled run is
+byte-identical to an unlabelled one). In every pair the *later* soup is side A,
+so a value above 0.5 means later beat earlier.
+
+**The control is the same soup against itself.** It matters more than it looks:
+lineage drift at N = 8192 over 300 epochs is large, and a self-control lands
+anywhere in 0.40–0.64. Reading the raw fractions without it would produce
+"findings" at every second comparison.
+
+| seed | self-control, 10 replicates | sd |
+|---|---|---|
+| 12 | mean 0.5187, range 0.4558–0.5714 | 0.042 |
+| 13 | mean 0.5075, range 0.3800–0.5951 | 0.070 |
+| 14 | mean 0.5031, range 0.4012–0.6448 | 0.072 |
+| 19 | mean 0.4794, range 0.4039–0.5404 | 0.051 |
+
+Each comparison is tested against its seed's pooled self-controls with a Welch
+*t*-test. That gives **84 tests across four seeds**, where roughly four hits at
+*p* < 0.05 are expected by chance — and exactly two isolated ones appeared
+(seed 12 at epoch 20 000, seed 19 at 62 750). **Holm–Bonferroni over all 84
+leaves eight, every one of them seed 14 at epoch 30 000 or later.** The two
+isolated hits do not survive, which is what a false positive should do.
+
+### The result
+
+**Seed 14** — the soup at each age against the first post-takeover soup:
+
+| epoch | vs first soup | vs previous soup |
+|---|---|---|
+| 10 000 – 25 000 | 0.49–0.52, no difference (p ≥ 0.62) | no difference |
+| **30 000** | **0.868 ± 0.034, p = 3 × 10⁻⁵** | **0.914 ± 0.022, p ≈ 0** |
+| 35 000 | 0.853 ± 0.017, p ≈ 0 | 0.667, p = 0.005 |
+| 40 000 | 0.898 ± 0.020, p ≈ 0 | 0.703, p = 0.001 |
+| 45 000 | 0.868 ± 0.027, p ≈ 0 | 0.549, no difference |
+| 50 000 | 0.867 ± 0.020, p ≈ 0 | 0.466, no difference |
+| 57 000 | 0.872 ± 0.026, p ≈ 0 | 0.529, no difference |
+
+**Seeds 12, 13 and 19**: every comparison is inside the neutral band, at every
+age, against both the first soup and the previous one. Fifty thousand epochs,
+nothing.
+
+So, to the question as posed — *does later beat earlier, and does the advantage
+keep growing, stop, or cycle?* — **later beats earlier in one seed of four, by
+a large margin, and then the advantage stops growing.** It does not cycle: once
+the step is taken, consecutive soups stop beating each other while the margin
+over the *first* soup holds flat at about 0.87 for the remaining 27 000 epochs.
+The step is a one-off, not a rate.
+
+The independent motif tracking agrees on timing. Across the run, leading
+families come and go with coverage 0.10–0.17; at **epoch 29 500 a family sweeps
+to 0.443 coverage**, two-and-a-half times any other leader in that run. Nothing
+comparable happens in the other three seeds, whose largest family coverage over
+the whole 50 000 epochs is 0.15–0.26.
+
+### What did not change when it happened
+
+The step is not a gain in self-sufficiency. A tape drawn from the soup and
+paired with a *fresh uniform-random* tape colonises the same share of the pair
+before and after:
+
+| seed | self-sufficiency, first → last | soup-vs-soup control | distinct tapes, first → last | sweeps |
+|---|---|---|---|---|
+| 12 | 0.789 → 0.771 | 0.4962 ± 0.0182 | 2 970 → 2 766 | 7 |
+| 13 | 0.771 → 0.772 | 0.4970 ± 0.0185 | 2 899 → 2 867 | 2 |
+| **14** | 0.688 → 0.718 | 0.4996 ± 0.0113 | **15 766 → 28 313** | **26** |
+| 19 | 0.774 → 0.765 | 0.4979 ± 0.0170 | 2 910 → 4 481 | 4 |
+
+Seed 14's self-sufficiency is 0.7011 ± 0.0067 across its whole continuation and
+does not move at epoch 30 000. Whatever the step bought, it was an advantage
+*against the other soup*, not a better machine in isolation.
+
+One correlation worth recording and not over-reading: **seed 14 is also the
+only one of the four whose population was diverse to begin with** — 15 766
+distinct tapes at the resume point against about 2 900 for the others, rising
+to 28 313 of 32 768. The seed that kept evolving is the seed that had standing
+variation. With n = 1 that is a hypothesis, not a finding.
+
+### A(t) does not see any of this
+
+The cumulative count of novel persistent 8-byte windows, filtered against the
+i.i.d. null, grows **linearly and at the same rate in all four seeds**:
+
+| seed | HOE, start → end | A(t) at end | A(t) slope, 2nd half | standing stock |
+|---|---|---|---|---|
+| 12 | 6.35 → 7.00 | 81 349 | 1.58 /epoch | 1 090 |
+| 13 | 6.22 → 7.13 | 85 775 | 1.72 /epoch | 1 142 |
+| 14 | 5.62 → 6.54 | 72 637 | **1.45 /epoch** | 997 |
+| 19 | 5.82 → 7.10 | 86 138 | 1.73 /epoch | 1 150 |
+
+**A(t) does not flatten.** It also does not distinguish the one seed where
+evolution demonstrably continued from the three where it demonstrably did not —
+and seed 14's slope is the *lowest* of the four. Meanwhile the *standing stock*
+of currently-persistent windows is flat at about a thousand throughout. A(t) is
+measuring turnover: windows are discovered and lost at matched rates, and the
+cumulative counter integrates the discovery rate. On this evidence A(t) is not
+a measure of continuing evolution, and the competition assay is. That is the
+single most useful thing these runs produced.
+
+A caveat on the filter: post-takeover, `A_t` and `A_t_naive` are **identical**.
+The soup's byte frequencies are skewed enough that every window abundant enough
+to qualify also clears five times its i.i.d. expectation, so the null filter
+removes nothing at all once a takeover has happened. It still does its job
+before one.
+
+### Figures
+
+`analysis/plateau_report/` — `assay_vs_first.png` (the competition curves with
+the control band), `advantage_vs_first.png` and `advantage_vs_prev.png` (final
+advantage against soup age), `families.png` (motif family coverage with sweeps
+marked), `selfsuff.png`, `profiles_seed*.png` (per-offset entropy around the
+leading motif). `analysis/plateau_report/summary.md` carries every number and
+`summary.json` the machine-readable form.
+
+---
+
 65 runs across ten configurations: the ring baseline and its
 boundary-free variants, bff at four scales, bff reproduced bit-exactly against
 [cubff](https://github.com/paradigms-of-intelligence/cubff) in both of its
@@ -10,7 +159,7 @@ planted-replicator control. Every number comes from a committed run directory;
 
 ---
 
-## The answer, first
+## 2. Which configurations produce a takeover at all
 
 **One family of configurations produces a program-class takeover: bff pairing
 with cubff's initial machine state.** Nothing else tested does.
